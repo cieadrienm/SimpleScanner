@@ -14,14 +14,17 @@ public enum ExportService {
         public let workgroup: String?
         public let serviceTitle: String?
         public var vendorStatus: VendorStatus? = nil
+        public var role: Host.Role? = nil
+        public var deviceType: String? = nil
         public let status: Host.Status
 
         public init(ip: String, label: String?, hostname: String?, mac: String?, vendor: String?, rttMs: Double?, ttl: Int?,
                     openPorts: [Int], netbiosName: String?, workgroup: String?, serviceTitle: String?,
-                    vendorStatus: VendorStatus? = nil, status: Host.Status) {
+                    vendorStatus: VendorStatus? = nil, role: Host.Role? = nil, deviceType: String? = nil, status: Host.Status) {
             self.ip = ip; self.label = label; self.hostname = hostname; self.mac = mac; self.vendor = vendor
             self.rttMs = rttMs; self.ttl = ttl; self.openPorts = openPorts; self.netbiosName = netbiosName
-            self.workgroup = workgroup; self.serviceTitle = serviceTitle; self.vendorStatus = vendorStatus; self.status = status
+            self.workgroup = workgroup; self.serviceTitle = serviceTitle; self.vendorStatus = vendorStatus
+            self.role = role; self.deviceType = deviceType; self.status = status
         }
     }
 
@@ -40,6 +43,8 @@ public enum ExportService {
                 workgroup: h.workgroup,
                 serviceTitle: h.serviceTitle ?? h.model,
                 vendorStatus: h.vendorStatus,
+                role: h.role,
+                deviceType: DeviceClassifier.classify(h) == .unknown ? nil : DeviceClassifier.classify(h).rawValue,
                 status: h.status
             )
         }
@@ -96,7 +101,12 @@ public enum ExportService {
         out += String(repeating: "-", count: 60) + "\n"
 
         let ipWidth = max(15, rows.map { $0.ip.count }.max() ?? 15)
-        let hostWidth = max(20, rows.map { ($0.label ?? $0.hostname ?? $0.netbiosName ?? "").count }.max() ?? 20)
+        func displayName(_ r: Row) -> String {
+            let base = r.label ?? r.hostname ?? r.netbiosName ?? "—"
+            guard let role = r.role else { return base }
+            return "\(base) (\(role.label.lowercased()))"
+        }
+        let hostWidth = max(20, rows.map { displayName($0).count }.max() ?? 20)
         let vendorWidth = max(20, rows.map { ($0.vendor ?? "").count }.max() ?? 20)
         let statusWidth = max(8, rows.map { statusLabel($0.status).count }.max() ?? 8)
 
@@ -106,7 +116,7 @@ public enum ExportService {
             let ports = r.openPorts.map(String.init).joined(separator: ", ")
             let title = r.serviceTitle.map { " · \($0)" } ?? ""
             out += pad(r.ip, to: ipWidth) + "  "
-                + pad(r.label ?? r.hostname ?? r.netbiosName ?? "—", to: hostWidth) + "  "
+                + pad(displayName(r), to: hostWidth) + "  "
                 + pad(r.vendor ?? "—", to: vendorWidth) + "  "
                 + pad(statusLabel(r.status), to: statusWidth) + "  "
                 + (ports.isEmpty ? "—" : ports) + title + "\n"

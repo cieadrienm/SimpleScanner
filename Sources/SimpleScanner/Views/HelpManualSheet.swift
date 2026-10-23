@@ -105,7 +105,8 @@ struct HelpManualSheet: View {
         case .device:
             title("Ce que montre la fiche")
             bullet("Identité", "nom DNS, NetBIOS, Bonjour, modèle, adresse MAC et fabricant (registre IEEE embarqué), latence, TTL.")
-            bullet("Type estimé", "routeur, Mac, téléphone, TV, enceinte, imprimante, NAS, Windows, objet connecté. Les indices sont expliqués sous l'identité ; des indices contradictoires laissent le type inconnu.")
+            bullet("Ce Mac, Passerelle", "deux badges sûrs : l'adresse de ce Mac (avec son modèle) et la passerelle par défaut du réseau.")
+            bullet("Type estimé", "routeur / box, switch / point d'accès, Mac, PC Windows, Linux / Raspberry, téléphone / tablette, montre, TV / boîtier vidéo, enceinte, caméra, console, imprimante, NAS, serveur, objet connecté. Chaque indice (nom, fabricant, modèle Bonjour, ports, TTL, services) pèse un poids ; la famille en tête doit valoir le double de la suivante, sinon le type reste inconnu. « Probable » signale un seul indice faible, l'icône est alors estompée. Les indices sont listés sous l'identité.")
             bullet("Services Bonjour", "chaque instance publiée par l'appareil, avec son nom.")
             bullet("Ports ouverts", "ceux de la dernière analyse, avec le service habituel. « Analyser… » lance une analyse ciblée.")
             bullet("Ping en direct", "une requête par seconde pendant que la fiche est ouverte : courbe, moyenne, min, max, perte.")

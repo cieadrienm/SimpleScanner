@@ -26,8 +26,8 @@ final class DeviceClassifierTests: XCTestCase {
 
     func testRouterByVendor() {
         XCTAssertEqual(DeviceClassifier.classify(host(vendor: "HUAWEI TECHNOLOGIES CO.,LTD")), .unknown)
-        XCTAssertEqual(DeviceClassifier.classify(host(vendor: "TP-LINK TECHNOLOGIES CO.,LTD.")), .unknown)
-        XCTAssertEqual(DeviceClassifier.classify(host(vendor: "NETGEAR")), .unknown)
+        XCTAssertEqual(DeviceClassifier.classify(host(vendor: "TP-LINK TECHNOLOGIES CO.,LTD.")), .networkGear)
+        XCTAssertEqual(DeviceClassifier.assessment(host(vendor: "NETGEAR")).confidence, .probable)
         XCTAssertEqual(DeviceClassifier.classify(host(vendor: "ASUSTeK COMPUTER INC.")), .unknown)
     }
 
@@ -48,14 +48,14 @@ final class DeviceClassifierTests: XCTestCase {
 
     func testPrinterByVendor() {
         XCTAssertEqual(DeviceClassifier.classify(host(vendor: "Hewlett Packard")), .unknown)
-        XCTAssertEqual(DeviceClassifier.classify(host(vendor: "Brother Industries")), .unknown)
-        XCTAssertEqual(DeviceClassifier.classify(host(vendor: "Canon Inc.")), .unknown)
+        XCTAssertEqual(DeviceClassifier.classify(host(vendor: "Brother Industries")), .printer)
+        XCTAssertEqual(DeviceClassifier.assessment(host(vendor: "Canon Inc.")).confidence, .probable)
     }
 
     // MARK: - TV
 
     func testVestelTV() {
-        XCTAssertEqual(DeviceClassifier.classify(host(vendor: "Vestel Elektronik San ve Tic. A.S.")), .unknown)
+        XCTAssertEqual(DeviceClassifier.classify(host(vendor: "Vestel Elektronik San ve Tic. A.S.")), .tv)
     }
 
     func testTVByHostname() {
@@ -88,6 +88,53 @@ final class DeviceClassifierTests: XCTestCase {
         XCTAssertEqual(DeviceClassifier.classify(host(hostname: "macbook.local", vendor: "Apple, Inc.")), .mac)
     }
 
+    // MARK: - Roles, ports, confidence
+
+    func testGatewayIsARouterWhateverTheVendor() {
+        var gateway = host(vendor: "HUAWEI TECHNOLOGIES CO.,LTD")
+        gateway.role = .gateway
+        let result = DeviceClassifier.assessment(gateway)
+        XCTAssertEqual(result.type, .router)
+        XCTAssertTrue(result.isCertain)
+    }
+
+    func testThisMacWinsOverOtherHints() {
+        var mine = host(hostname: "desktop-of-adrien.local", vendor: "Dell Inc.")
+        mine.role = .thisMac
+        XCTAssertEqual(DeviceClassifier.classify(mine), .mac)
+    }
+
+    func testUbiquitiIsNetworkGearUnlessGateway() {
+        XCTAssertEqual(DeviceClassifier.classify(host(vendor: "Ubiquiti Inc")), .networkGear)
+        var gateway = host(vendor: "Ubiquiti Inc")
+        gateway.role = .gateway
+        XCTAssertEqual(DeviceClassifier.classify(gateway), .router)
+    }
+
+    func testIOSLockdownPortIsAPhone() {
+        XCTAssertEqual(DeviceClassifier.classify(host(openPorts: [62078])), .phone)
+        XCTAssertTrue(DeviceClassifier.assessment(host(openPorts: [62078])).isCertain)
+    }
+
+    func testComputerFamiliesMergeInsteadOfConflicting() {
+        var pi = host(vendor: "Raspberry Pi Trading Ltd", openPorts: [22])
+        pi.services = ["SSH"]
+        XCTAssertEqual(DeviceClassifier.classify(pi), .linux)
+        var pc = host(hostname: "desktop-7h2k.local", vendor: "Dell Inc.")
+        pc.ttl = 128
+        XCTAssertEqual(DeviceClassifier.classify(pc), .windows)
+    }
+
+    func testCloseCallStaysUnknown() {
+        XCTAssertEqual(DeviceClassifier.classify(host(vendor: "Samsung Electronics Co.,Ltd")), .unknown)
+    }
+
+    func testCameraByVendorAndRTSP() {
+        let cam = host(vendor: "Hikvision Digital Technology", openPorts: [80, 554])
+        XCTAssertEqual(DeviceClassifier.classify(cam), .camera)
+        XCTAssertTrue(DeviceClassifier.assessment(cam).isCertain)
+    }
+
     // MARK: - Unknown
 
     func testEmptyHost() {
@@ -102,7 +149,7 @@ final class DeviceClassifierTests: XCTestCase {
     // MARK: - Symbols
 
     func testAllDeviceTypesHaveSymbols() {
-        for type in [DeviceType.router, .printer, .tv, .mac, .phone, .server, .nas, .iot, .windows, .unknown] {
+        for type in DeviceType.allCases {
             XCTAssertFalse(type.sfSymbol.isEmpty, "\(type) missing SF Symbol")
             XCTAssertFalse(type.label.isEmpty, "\(type) missing label")
         }

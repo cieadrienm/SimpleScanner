@@ -214,7 +214,7 @@ struct DeviceRow: View {
     let selected: Bool
     let alternate: Bool
 
-    private var type: DeviceType { DeviceClassifier.classify(host) }
+    private var classification: DeviceClassification { DeviceClassifier.assessment(host) }
 
     var body: some View {
         HStack(spacing: 0) {
@@ -259,6 +259,9 @@ struct DeviceRow: View {
                             .layoutPriority(1)
                     } else {
                         Text("—").font(.system(size: 11.5)).foregroundStyle(Theme.textFaint.swiftUI)
+                    }
+                    if let role = host.role {
+                        Chip(text: role.label, tint: role == .thisMac ? Theme.accent.swiftUI : Theme.arp.swiftUI, filled: role == .thisMac).fixedSize()
                     }
                     if let model = host.model {
                         Text(model).font(.system(size: 10)).foregroundStyle(Theme.textFaint.swiftUI).lineLimit(1)
@@ -324,21 +327,27 @@ struct DeviceRow: View {
             }
             .frame(width: 14)
             .help(statusHelp)
-            Image(systemName: type.sfSymbol)
+            let classification = classification
+            Image(systemName: classification.symbol)
                 .font(.system(size: 12, weight: .medium))
-                .foregroundStyle(type == .unknown ? Theme.textFaint.swiftUI : Theme.textDim.swiftUI)
+                .foregroundStyle(classification.type == .unknown ? Theme.textFaint.swiftUI : Theme.textDim.swiftUI)
+                .opacity(classification.type != .unknown && !classification.isCertain ? 0.7 : 1)
                 .frame(width: 18)
-                .help(type.label)
+                .help(classification.type == .unknown ? classification.evidence : (classification.isCertain ? classification.type.label : "Probablement : \(classification.type.label)"))
                 .contentTransition(.symbolEffect(.replace))
         }
     }
 
     private func cell<Content: View>(width: CGFloat?, alignment: Alignment = .leading, @ViewBuilder content: () -> Content) -> some View {
-        content()
-            .frame(width: width, alignment: alignment)
-            .frame(maxWidth: width == nil ? .infinity : nil, alignment: alignment)
-            .padding(.horizontal, 6)
-            .clipped()
+        Group {
+            if let width {
+                content().frame(width: width, alignment: alignment)
+            } else {
+                content().frame(minWidth: 0, maxWidth: .infinity, alignment: alignment)
+            }
+        }
+        .padding(.horizontal, 6)
+        .clipped()
     }
 
     private var vendorFallback: String {

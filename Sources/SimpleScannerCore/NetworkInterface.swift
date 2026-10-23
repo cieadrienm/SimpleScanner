@@ -76,4 +76,39 @@ public enum NetworkInterface {
     public static func ownAddresses() -> Set<String> {
         Set(activeInterfaces().map(\.ipv4))
     }
+
+    /// The default IPv4 gateway, from `route -n get default` (a system binary, ~10 ms).
+    public static func defaultGateway() -> String? {
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/sbin/route")
+        process.arguments = ["-n", "get", "default"]
+        let pipe = Pipe()
+        process.standardOutput = pipe
+        process.standardError = FileHandle.nullDevice
+        guard (try? process.run()) != nil else { return nil }
+        let data = pipe.fileHandleForReading.readDataToEndOfFile()
+        process.waitUntilExit()
+        for line in String(decoding: data, as: UTF8.self).split(whereSeparator: \.isNewline) {
+            let trimmed = line.trimmingCharacters(in: .whitespaces)
+            guard trimmed.hasPrefix("gateway:") else { continue }
+            let value = trimmed.dropFirst("gateway:".count).trimmingCharacters(in: .whitespaces)
+            return IPv4.uint32(from: value) != nil ? value : nil
+        }
+        return nil
+    }
+}
+
+/// What this Mac says about itself.
+public enum LocalMachine {
+    /// `hw.model`, e.g. `Mac14,6`.
+    public static let model: String? = {
+        var size = 0
+        guard sysctlbyname("hw.model", nil, &size, nil, 0) == 0, size > 1 else { return nil }
+        var buffer = [CChar](repeating: 0, count: size)
+        guard sysctlbyname("hw.model", &buffer, &size, nil, 0) == 0 else { return nil }
+        return String(cString: buffer)
+    }()
+
+    /// `Adriens-MacBook.local` as the system reports it.
+    public static var hostName: String { ProcessInfo.processInfo.hostName }
 }

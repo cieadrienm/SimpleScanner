@@ -35,13 +35,14 @@ public struct ScanSnapshot: Codable, Sendable {
         public let model: String?
         public let bonjourName: String?
         public let services: [String]
+        public let role: Host.Role?
         public let status: Host.Status
 
         public init(ip: String, hostname: String?, mac: String?, vendor: String?, vendorStatus: VendorStatus? = nil,
                     rttMs: Double?, ttl: Int?, netbiosName: String? = nil,
                     workgroup: String? = nil, openPorts: [Int], serviceTitle: String?,
                     model: String? = nil, bonjourName: String? = nil, services: [String] = [],
-                    status: Host.Status = .alive) {
+                    role: Host.Role? = nil, status: Host.Status = .alive) {
             self.ip = ip
             self.hostname = hostname
             self.mac = mac
@@ -56,6 +57,7 @@ public struct ScanSnapshot: Codable, Sendable {
             self.model = model
             self.bonjourName = bonjourName
             self.services = services
+            self.role = role
             self.status = status
         }
 
@@ -63,13 +65,13 @@ public struct ScanSnapshot: Codable, Sendable {
             self.init(ip: h.ip, hostname: h.hostname, mac: h.mac, vendor: h.vendor, vendorStatus: h.vendorStatus,
                       rttMs: h.rttMs, ttl: h.ttl, netbiosName: h.netbiosName, workgroup: h.workgroup,
                       openPorts: h.openPorts, serviceTitle: h.serviceTitle, model: h.model,
-                      bonjourName: h.bonjourName, services: h.services, status: h.status)
+                      bonjourName: h.bonjourName, services: h.services, role: h.role, status: h.status)
         }
 
         public func host(vendorStatus: VendorStatus? = .historical) -> Host {
             Host(ip: ip, hostname: hostname, mac: mac, vendor: vendor, vendorStatus: vendorStatus ?? self.vendorStatus,
                  rttMs: rttMs, ttl: ttl, netbiosName: netbiosName, workgroup: workgroup, openPorts: openPorts,
-                 serviceTitle: serviceTitle, model: model, bonjourName: bonjourName, services: services, status: status)
+                 serviceTitle: serviceTitle, model: model, bonjourName: bonjourName, services: services, role: role, status: status)
         }
 
         // Custom decoder lets older files (no `ttl`, `netbiosName`, `model`, …) still load.
@@ -97,6 +99,7 @@ public struct ScanSnapshot: Codable, Sendable {
             self.model = try c.decodeIfPresent(String.self, forKey: .model)
             self.bonjourName = try c.decodeIfPresent(String.self, forKey: .bonjourName)
             self.services = try c.decodeIfPresent([String].self, forKey: .services) ?? []
+            self.role = try c.decodeIfPresent(Host.Role.self, forKey: .role)
             self.status = try c.decodeIfPresent(Host.Status.self, forKey: .status) ?? .alive
         }
     }

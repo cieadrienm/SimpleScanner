@@ -91,6 +91,13 @@ public struct NetworkScanner: NetworkScanning {
             guard found.insert(value, DiscoverResult(rttMs: nil, ttl: nil, via: .arp)) else { continue }
             continuation.yield(.host(Host(ip: ip, mac: arp.entries[ip], discoveredBy: .arp, status: .alive)))
         }
+        // Known places: this Mac and the default gateway.
+        for ip in own where found.contains(IPv4.uint32(from: ip) ?? 0) {
+            continuation.yield(.host(Host(ip: ip, hostname: LocalMachine.hostName, model: LocalMachine.model, role: .thisMac, status: .alive)))
+        }
+        if let gateway = NetworkInterface.defaultGateway(), let value = IPv4.uint32(from: gateway), found.contains(value) {
+            continuation.yield(.host(Host(ip: gateway, role: .gateway, status: .alive)))
+        }
         continuation.yield(.sweep(sent: report.sent, replies: report.replies, rejected: report.rejected, arpNeighbours: arp.entries.count))
         if localTargets > 0, report.replies == 0, report.rejected > 0, !Task.isCancelled {
             continuation.yield(.warning(.localNetworkDenied))

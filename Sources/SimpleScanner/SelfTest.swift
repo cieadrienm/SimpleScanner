@@ -46,6 +46,11 @@ enum SelfTest {
         try check(DeviceClassifier.classify(hosts[7]) == .speaker, "Classifieur : HomePod")
         try check(DeviceClassifier.classify(hosts[8]) == .windows, "Classifieur : Windows")
         try check(DeviceClassifier.classify(hosts[0]) == .router, "Classifieur : Freebox")
+        try check(DeviceClassifier.assessment(hosts[0]).isCertain && DeviceClassifier.assessment(hosts[1]).isCertain, "Rôles passerelle et ce Mac : certitude")
+        try check(DeviceClassifier.classify(hosts[10]) == .networkGear, "Classifieur : Ubiquiti")
+        try check(DeviceClassifier.classify(hosts[11]) == .console, "Classifieur : Nintendo")
+        try check(DeviceClassifier.classify(hosts[9]) == .iot, "Classifieur : Shelly")
+        try check(DeviceClassifier.assessment(Host(ip: "10.0.0.9", vendor: "NETGEAR")).confidence == .probable, "Vendeur seul : estimation probable")
 
         let rows = ExportService.rows(from: hosts.filter { $0.status == .alive }) { SyntheticScan.labels[$0.mac ?? ""] }
         try check(ExportService.csv(rows: rows).split(separator: "\n").count == rows.count + 1, "CSV : une ligne par appareil")
@@ -101,13 +106,13 @@ enum SelfTest {
         let model = AppModel(startServices: false)
         SyntheticScan.load(into: model)
         try check(model.inspectedHost?.ip == "192.168.1.12", "Sélection de la fiche")
-        try check(model.visibleHosts.count == 10, "Lignes visibles : 10, lu \(model.visibleHosts.count)")
+        try check(model.visibleHosts.count == 12, "Lignes visibles : 12, lu \(model.visibleHosts.count)")
         model.sortKey = .latency
         try check(model.visibleHosts.first?.ip == "192.168.1.12", "Tri par latence")
         model.sortKey = .ip
         try check(model.scan.diff?.newCount == 1, "Comparaison chargée")
         let png = Snapshot.renderOffscreenPNG(model: model)
         try check((png?.count ?? 0) > 20_000, "Rendu de la fenêtre")
-        try check(model.statusMessage.contains("10 appareils"), "Message d'état : \(model.statusMessage)")
+        try check(model.statusMessage.contains("12 appareils"), "Message d'état : \(model.statusMessage)")
     }
 }

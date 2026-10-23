@@ -13,6 +13,18 @@ public struct Host: Identifiable, Hashable, Sendable {
         case icmp, arp, tcp
     }
 
+    /// A special place on the network, known for sure.
+    public enum Role: String, Codable, Sendable {
+        case thisMac, gateway
+
+        public var label: String {
+            switch self {
+            case .thisMac: "Ce Mac"
+            case .gateway: "Passerelle"
+            }
+        }
+    }
+
     public let id: UUID
     public var ip: String
     public var hostname: String?
@@ -32,6 +44,7 @@ public struct Host: Identifiable, Hashable, Sendable {
     /// Bonjour service families seen on the device, as display names (`AirPlay`, `SMB`, …).
     public var services: [String]
     public var discoveredBy: Discovery?
+    public var role: Role?
     public var status: Status
 
     public init(
@@ -51,6 +64,7 @@ public struct Host: Identifiable, Hashable, Sendable {
         bonjourName: String? = nil,
         services: [String] = [],
         discoveredBy: Discovery? = nil,
+        role: Role? = nil,
         status: Status = .scanning
     ) {
         self.id = id
@@ -69,6 +83,7 @@ public struct Host: Identifiable, Hashable, Sendable {
         self.bonjourName = bonjourName
         self.services = services
         self.discoveredBy = discoveredBy
+        self.role = role
         self.status = status
     }
 
@@ -105,6 +120,7 @@ public struct Host: Identifiable, Hashable, Sendable {
         if let v = update.bonjourName { merged.bonjourName = v }
         if !update.services.isEmpty { merged.services = update.services }
         if let v = update.discoveredBy { merged.discoveredBy = v }
+        if let v = update.role { merged.role = v }
         merged.openPorts = update.openPorts.isEmpty ? merged.openPorts : update.openPorts
         merged.status = update.status
         return merged

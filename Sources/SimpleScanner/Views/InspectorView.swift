@@ -81,9 +81,9 @@ struct InspectorView: View {
         HStack(alignment: .top, spacing: 12) {
             ZStack {
                 RoundedRectangle(cornerRadius: 10).fill(Theme.accent.swiftUI.opacity(0.14))
-                Image(systemName: classification.type.sfSymbol)
+                Image(systemName: classification.symbol)
                     .font(.system(size: 22, weight: .medium))
-                    .foregroundStyle(Theme.accent.swiftUI)
+                    .foregroundStyle(Theme.accent.swiftUI.opacity(classification.isCertain || classification.type == .unknown ? 1 : 0.75))
                     .contentTransition(.symbolEffect(.replace))
             }
             .frame(width: 46, height: 46)
@@ -102,7 +102,10 @@ struct InspectorView: View {
                     Text(statusLine(host)).font(.system(size: 10.5)).foregroundStyle(Theme.textDim.swiftUI)
                     if classification.type != .unknown {
                         Text("·").foregroundStyle(Theme.textFaint.swiftUI)
-                        Text(classification.type.label).font(.system(size: 10.5, weight: .medium)).foregroundStyle(Theme.textDim.swiftUI)
+                        Text((classification.isCertain ? "" : "probablement ") + classification.type.label).font(.system(size: 10.5, weight: .medium)).foregroundStyle(Theme.textDim.swiftUI)
+                    }
+                    if let role = host.role {
+                        Chip(text: role.label, tint: role == .thisMac ? Theme.accent.swiftUI : Theme.arp.swiftUI, filled: role == .thisMac)
                     }
                 }
             }
@@ -162,9 +165,17 @@ struct InspectorView: View {
             infoRow("Service", host.serviceTitle)
             infoRow("Latence", host.rttMs.map(Format.latency), mono: true)
             infoRow("TTL", Format.ttlHint(host.ttl), mono: true)
-            if classification.type != .unknown {
-                Text(classification.evidence).font(.system(size: 10)).foregroundStyle(Theme.textFaint.swiftUI).fixedSize(horizontal: false, vertical: true).padding(.top, 2)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(classification.type == .unknown ? "Type inconnu" : (classification.isCertain ? "Type : \(classification.type.label)" : "Type probable : \(classification.type.label)"))
+                    .font(.system(size: 10.5, weight: .semibold)).foregroundStyle(Theme.textDim.swiftUI)
+                ForEach(classification.reasons.prefix(5), id: \.self) { reason in
+                    HStack(alignment: .firstTextBaseline, spacing: 5) {
+                        Text("•").foregroundStyle(Theme.accent.swiftUI.opacity(0.7))
+                        Text(reason).font(.system(size: 10)).foregroundStyle(Theme.textFaint.swiftUI).fixedSize(horizontal: false, vertical: true)
+                    }
+                }
             }
+            .padding(.top, 4)
         }
     }
 

@@ -16,3 +16,4 @@ Première version numérotée, issue d'iPScanner 1.3.1 (Canberk Kılıçarslan, 
 - Scans `.simplescan`, comparaison (+ nouveaux, ~ modifiés, − disparus), exports CSV / JSON / IP:port / rapport texte, import de cibles, calculateur de sous-réseau, rescan automatique.
 - Ligne de commande intégrée : `--scan`, `--self-test`, `--snapshot`, `--version`.
 - Avertissement explicite quand macOS refuse l'accès au réseau local.
+- Badges « Ce Mac » et « Passerelle », classifieur par indices pondérés sur 16 familles (switch / point d'accès, caméra, console, Linux, montre…) avec niveau de confiance et indices listés dans la fiche.
