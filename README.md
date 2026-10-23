@@ -1,172 +1,58 @@
-<p align="center">
-  <img src="assets/icon.png" width="80" alt="iPScanner app icon">
-</p>
+# SimpleScanner
 
-![iPScanner — native network discovery for macOS](docs/media/header.svg)
+Scanner réseau natif, ultra-léger (~5 Mo, aucune dépendance) et rapide pour macOS, conçu dans le même esprit que **SimpleAudio**, **SimpleMIDIPlayer** et **Simple Recorder** (**cie Adrien M**). Issu d'[iPScanner](https://github.com/canberkys/iPScanner) de Canberk Kılıçarslan (MIT), réécrit autour d'un moteur ICMP natif et de l'interface sombre de la famille.
 
-<p align="center">
-  <a href="https://github.com/canberkys/iPScanner/actions/workflows/ci.yml"><img src="https://github.com/canberkys/iPScanner/actions/workflows/ci.yml/badge.svg" alt="CI status"></a>
-  <a href="https://github.com/canberkys/iPScanner/releases"><img src="https://img.shields.io/github/v/release/canberkys/iPScanner?label=published" alt="Latest published version"></a>
-  <img src="https://img.shields.io/badge/macOS-14.4%2B-163c5b?logo=apple" alt="macOS deployment target 14.4 and later">
-  <img src="https://img.shields.io/badge/Apple_Silicon_%2B_Intel-universal-16728d" alt="Universal binaries">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-24785c" alt="MIT license"></a>
-</p>
+## Fonctionnalités
 
-<p align="center">
-  <a href="#demo">Demo</a> · <a href="#get-started">Get started</a> · <a href="docs/features.md">Features</a> · <a href="CHANGELOG.md">Changelog</a> · <a href="https://github.com/canberkys/iPScanner/issues/new/choose">Report an issue</a>
-</p>
+- **Découverte en une à deux secondes par /24** : un socket ICMP datagramme (sans privilèges), une requête d'écho par adresse espacée d'1,5 ms, puis la table ARP du noyau pour les voisins qui ignorent le ping, et un repli TCP (445, 80, 443, 22, 3389, 62078) pour les plages routées. Latence et TTL par appareil. Trois profils : **Rapide** (ICMP + ARP), **Standard** (+ NetBIOS, repli TCP), **Approfondi** (+ ports courants et bannières).
+- **Qui est qui** : nom DNS inverse (`.local` compris), nom NetBIOS et groupe de travail, nom d'instance Bonjour, modèle matériel lu dans les enregistrements TXT (`MacStudio13,1`, `AppleTV14,1`, `iPhone16,1`), fabricant par le registre IEEE embarqué (MA-L, MA-M, MA-S), type d'appareil estimé (routeur, Mac, téléphone, TV, enceinte, imprimante, NAS, Windows, objet connecté) avec ses indices.
+- **Bonjour en continu** : 27 familles de services dont AirPlay, HomeKit, Chromecast, SMB, SSH, IPP, Sonos, Hue, **OSC**, **OSCQuery** et **NDI** ; la barre latérale filtre la liste par service.
+- **Fiche de l'appareil** : identité, services, ports ouverts avec leur service, **ping en direct** (sparkline, moyenne, min, max, perte), actions en un clic (HTTP, HTTPS, SSH, Partage d'écran, SMB, AFP, Bureau à distance, Telnet, ping dans Terminal, Wake-on-LAN), copie de l'IP et de la MAC.
+- **Mémoire du réseau** : noms persistants attachés à l'adresse MAC (avec `#tags` cherchables), favoris, scans enregistrés (`.simplescan`, JSON lisible) et **comparaison** d'un scan à un autre (`+` nouveaux, `~` modifiés, `−` disparus), rescan automatique (30 s à 15 min).
+- **Outils** : analyse de ports par préréglages (Courants, Web, 1–1024) ou liste libre avec lecture des bannières, import d'une liste de cibles (`.txt` / `.csv`), calculateur de sous-réseau, exports **CSV**, **JSON**, **liste `ip:port`** et **rapport texte**.
+- **Interface** : liste triable aux colonnes adaptées à la largeur, lignes animées au fil des réponses, recherche instantanée avec surlignage, barre latérale et fiche escamotables, fenêtres natives À propos, Aide (`⌘?`) et Raccourcis (`⌘/`), tout en français.
+- **Ligne de commande intégrée** au même exécutable : `--scan`, `--self-test`, `--snapshot`, `--version`.
 
-**iPScanner is a compact, native macOS tool for everyday IPv4 network discovery.**
-Find responding devices, inspect names and services, add searchable labels, and
-save or export what you find. Built with SwiftUI; signed in-app updates are powered by Sparkle.
-
-> **1.3.1 is available:** [Download the signed, notarized DMG](https://github.com/canberkys/iPScanner/releases/download/v1.3.1/iPScanner-v1.3.1.dmg).
-> Fixes the v1.2.0 opening issue ([#10](https://github.com/canberkys/iPScanner/issues/10)).
-> See the [release notes](https://github.com/canberkys/iPScanner/releases/tag/v1.3.1)
-> for validation details and known platform limitations.
-
-## Demo
-
-![iPScanner device list with names, labels, vendors and open ports](docs/media/results-light.jpg)
-
-<details>
-<summary><strong>Watch the short tour: results → device details → export</strong></summary>
-
-![iPScanner results, device details and export walkthrough](docs/media/demo.gif)
-
-An 11-second tour of actual app screens with a fictional saved snapshot. This is
-an interface walkthrough, not a live network scan.
-
-</details>
-
-[Screenshot gallery and sample snapshot](docs/media/README.md)
-
-## Everyday tasks, one window
-
-| Task | In iPScanner |
-|---|---|
-| Discover devices | Enter an IP, CIDR, range or imported target list. Choose Quick, Standard or Deep. |
-| Understand a result | Inspect DNS, MAC/vendor status, open ports, Bonjour services and device-type evidence. |
-| Find it again | Add labels and #tags, search results, filter the table and save named networks. |
-| Compare and share | Save a snapshot, compare changes, or export CSV, JSON, IP:Port and text reports. |
-| Connect and troubleshoot | Open connection tools, check live ping, inspect service banners or send Wake-on-LAN. |
-
-<details>
-<summary><strong>Light and dark appearances</strong></summary>
-
-| Light | Dark |
-|---|---|
-| ![Results in light appearance](docs/media/results-light.jpg) | ![Results in dark appearance](docs/media/results-dark.jpg) |
-
-All device names, vendors and labels shown are sample data. [View full-size images](docs/media/README.md).
-
-</details>
-
-## Get started
-
-Download the latest DMG from [Releases](https://github.com/canberkys/iPScanner/releases),
-drag **iPScanner** to **Applications**, then open it.
-
-1. Choose your network from the subnet menu or enter a target you administer.
-2. Leave the profile on **Standard** and select **Scan**. **Stop** cancels the run.
-3. Search the results or select a device and open **Device Details** (`⌘⌥I`).
-4. Add a label, save a snapshot or use **Export** above the results.
-
-**Options** contains scan profiles and repeat intervals. **Tools** contains target
-import, the subnet calculator and port scans. AFP and Telnet live under **Advanced**.
-See [all features](docs/features.md) or open **Help → iPScanner Help** in the app.
-
-### Try the sample without scanning a network
-
-Download [demo.ipscan.json](docs/media/demo.ipscan.json) using GitHub's **Download raw file**
-button. In the app, use **File → Open Scan…** (`⌘O`) to load it. Search for `#lab`
-to see tag filtering. Loading the snapshot does not start a discovery scan.
-Opening details for the first row runs the ping monitor against localhost only.
-
-### Updates and feedback
-
-- **Automatic update checks:** optional daily checks through Sparkle.
-  Manual checks are available in Help and Settings.
-- **In-app installation:** review release notes, download and install a signed update.
-  Install the latest DMG manually once to receive future releases through Sparkle.
-- **Feedback:** review your draft in the app before sending it through Cloudflare
-  to a **public GitHub issue**. A GitHub account is not required to submit in-app.
-
-### What the results mean
-
-A responding device is observable from your current network; a timeout does not
-prove a device is offline. MAC addresses may be unavailable across routers or
-because of OS privacy restrictions. Local/randomized MACs do not establish a
-manufacturer. Device types are estimates, with evidence in the details view.
-Sending a Wake-on-LAN packet does not confirm that a device woke up.
-
-On macOS 27, MAC access may require additional signed capabilities and provisioning.
-This remains an [open verification item](docs/acceptance-1.3.0.md).
-
-## Command-line interface
-
-The universal CLI is bundled at `iPScanner.app/Contents/Helpers/ipscanner` and uses
-the same discovery engine and export models as the GUI.
+## Compilation & Installation
 
 ```bash
-# Quick check of this Mac's loopback address
-/Applications/iPScanner.app/Contents/Helpers/ipscanner scan 127.0.0.1 --profile quick
+# Générer l'icône et assembler /Applications/SimpleScanner.app
+Scripts/bundle.sh release
 
-# Scan your target file and write JSON
-/Applications/iPScanner.app/Contents/Helpers/ipscanner scan \
-  --input targets.csv --profile standard --format json --output scan.json
+# Construire build/SimpleScanner.app sans l'installer
+Scripts/bundle.sh debug
+
+# Suite de tests (loopback uniquement, aucun paquet vers le réseau)
+swift test
+
+# Auto-test de bout en bout et capture PNG du réseau de démonstration, sans interaction
+.build/debug/SimpleScanner --self-test
+.build/debug/SimpleScanner --snapshot /tmp/simplescanner.png
 ```
 
-Run `--help` for all options. Exit codes: `0` success, `1` input error, `2` runtime error.
-The old `Contents/MacOS/ipscanner` path has moved to avoid the filename collision in #10.
+Requiert Xcode 16 ou plus récent ; l'app tourne sur macOS 15 et plus. À son premier scan, macOS demande l'autorisation **Réseau local** ; sans elle, seuls ce Mac et la passerelle répondent et l'app l'indique.
 
-## Build and test
-
-Requirements: macOS, Xcode with an SDK supporting the macOS 14.4 deployment target,
-and [XcodeGen](https://github.com/yonaskolb/XcodeGen).
+## Ligne de commande
 
 ```bash
-brew install xcodegen
-git clone https://github.com/canberkys/iPScanner.git
-cd iPScanner
-xcodegen generate
-open iPScanner.xcodeproj
+/Applications/SimpleScanner.app/Contents/MacOS/SimpleScanner --scan 192.168.1.0/24 --profile standard --format txt
+/Applications/SimpleScanner.app/Contents/MacOS/SimpleScanner --scan --input cibles.txt --ports 22,80,443 --banners --format csv --output scan.csv
 ```
 
-Choose the **iPScanner** scheme and run with `⌘R`.
+Options : `--profile quick|standard|deep`, `--ports <liste>`, `--banners`, `--format json|csv|txt|ip-port`, `--output <chemin>`, `--quiet`. Codes de sortie : `0` succès, `1` argument invalide, `2` erreur d'exécution.
 
-```bash
-xcodebuild test -scheme iPScanner -destination 'platform=macOS' CODE_SIGN_IDENTITY=-
-python3 scripts/build-vendor-db.py --check
-(cd feedback-relay && npm test)
-```
+## Ce que les résultats veulent dire
 
-The latest local validation passed **190 application tests and 6 Worker tests**.
-See the [acceptance table](docs/acceptance-1.3.0.md) for tested methods and limitations;
-a universal build is not proof of testing on Intel hardware or every supported OS.
+- **Sans réponse** ne prouve pas l'absence : un appareil peut bloquer le ping et ne rien publier. Sur votre réseau direct, l'absence d'entrée ARP est en revanche un signe fort.
+- L'**adresse MAC** n'est connue que des voisins directs ; les adresses privées (iPhone, iPad, Android récents) ne révèlent pas le fabricant.
+- Le **type d'appareil** est une estimation ; les indices sont affichés dans la fiche.
+- **Wake-on-LAN** envoie le paquet magique en diffusion sur le port 9 ; rien ne confirme le réveil.
+- Au plus **65 536 adresses** par scan. Le noyau macOS rejette 20 s durant toute adresse dont la résolution ARP a échoué : un second scan immédiat sur un réseau calme signale ces rejets, c'est normal.
 
-## Privacy and distribution
+## Confidentialité
 
-- No telemetry. Discovery runs on the targets you select.
-- GitHub is contacted for update checks; feedback is sent only when you submit it.
-  Scan results, IPs and MACs are not attached to feedback automatically.
-- Vendor matching uses a compact offline IEEE index. Raw pinned sources and
-  provenance notes are in [data/ieee](data/ieee/).
-- Signed packaging validates GUI/CLI identity, architectures, notarization,
-  stapling, DMG integrity and SHA-256. [Signing guide](docs/signing-guide-tr.md).
+Aucune télémétrie, aucun compte, aucune connexion sortante hors de votre réseau. Le registre des fabricants ([IEEE](https://standards-oui.ieee.org/)) est embarqué ; `Scripts/build-vendor-db.py` le régénère depuis `data/ieee`.
 
-## What's next
+## Crédits
 
-Continue the remaining compatibility and accessibility checks. History, IPv6 and menu-bar mode
-are outside the current update. [Follow-up work](docs/next-phase-plan-tr.md).
-
-## Project
-
-[Changelog](CHANGELOG.md) · [1.3.1 notes](docs/release-notes-1.3.1.md) ·
-[Bug reports and feature requests](https://github.com/canberkys/iPScanner/issues/new/choose) ·
-[Website](https://canberk.me/projects/ipscanner/)
-
-[Contributing](CONTRIBUTING.md) · [Support](SUPPORT.md) · [Update distribution](docs/automatic-updates.md)
-
-MIT © Canberk Kılıçarslan — [LICENSE](LICENSE).
-Vendor registry data: [IEEE Standards Association](https://standards-oui.ieee.org/).
+**cie Adrien M** (Compagnie Adrien M) — Bundle ID : `net.cieadrienm.simplescanner`. Dérivé d'iPScanner © Canberk Kılıçarslan, licence MIT ([LICENSE](LICENSE)).

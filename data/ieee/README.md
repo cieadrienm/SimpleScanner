@@ -4,7 +4,7 @@ These files are retained from the existing project. Their original retrieval dat
 was not recorded; `sourceDate` is explicitly null. Index validation date:
 2026-09-26. Do not interpret this date as the registry publication date.
 
-Run `python3 scripts/build-vendor-db.py` to regenerate the compact app index.
+Run `python3 Scripts/build-vendor-db.py` to regenerate the compact app index.
 `--check` verifies exact bytes, assignment bounds and minimum record counts.
 The index embeds source URLs and SHA-256 digests. The build and packaging checks
 reject stale indexes and bundled raw registry files. No database download occurs
