@@ -273,6 +273,17 @@ final class AppModel {
         scan.setLabel(value, for: scan.host(forID: host.id) ?? host)
     }
 
+    func open(service displayType: String, of host: Host) {
+        let port = mdns.services(for: host.ip).first { $0.displayType == displayType }?.port
+        guard let action = HostActions.action(forService: displayType, port: port) else { return }
+        HostActions.open(action.connection, ip: host.ip, port: action.port)
+    }
+
+    func open(port: Int, of host: Host) {
+        guard let action = HostActions.action(forPort: port) else { return }
+        HostActions.open(action.connection, ip: host.ip, port: action.port)
+    }
+
     func toggleInspector() {
         showInspector.toggle()
     }

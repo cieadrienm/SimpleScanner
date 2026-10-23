@@ -11,9 +11,53 @@ final class MDNSDiscovery {
     struct ServiceRecord: Hashable, Sendable {
         let displayType: String
         let serviceType: String
+        /// The instance name, cleaned of MAC prefixes and hash suffixes.
         let name: String
         let ip: String
+        var port: Int? = nil
         var model: String? = nil
+    }
+
+    /// Service families whose instance name is the device's own name, most trustworthy first.
+    nonisolated static let identityTypes: [String] = [
+        "_device-info._tcp", "_companion-link._tcp", "_smb._tcp", "_afpovertcp._tcp", "_sftp-ssh._tcp", "_ssh._tcp",
+        "_rfb._tcp", "_workstation._tcp", "_airplay._tcp", "_hap._tcp", "_homekit._tcp", "_googlecast._tcp",
+        "_printer._tcp", "_ipp._tcp", "_ipps._tcp", "_pdl-datastream._tcp", "_scanner._tcp", "_hue._tcp",
+        "_sonos._tcp", "_raop._tcp", "_http._tcp", "_https._tcp", "_oscjson._tcp", "_osc._udp", "_ndi._tcp",
+    ]
+
+    /// `3AB608DB6D2A@Salon` → `Salon`, `Chromecast-0a1b…` → `Chromecast`, `name [aa:bb:…]` → `name`, `Salon (2)` → `Salon`.
+    nonisolated static func cleanName(_ raw: String, type: String) -> String {
+        var name = raw.trimmingCharacters(in: .whitespaces)
+        if let at = name.firstIndex(of: "@"), at > name.startIndex, at < name.index(before: name.endIndex) {
+            let prefix = name[..<at]
+            if type == "_raop._tcp" || type == "_sonos._tcp" || prefix.allSatisfy({ $0.isHexDigit || $0 == "-" || $0 == "_" }) {
+                name = String(name[name.index(after: at)...])
+            }
+        }
+        if name.hasSuffix("]"), let bracket = name.range(of: " [", options: .backwards) {
+            name = String(name[..<bracket.lowerBound])
+        }
+        if let dash = name.lastIndex(of: "-") {
+            let tail = name[name.index(after: dash)...]
+            if tail.count >= 16, tail.allSatisfy(\.isHexDigit) { name = String(name[..<dash]) }
+        }
+        while let suffix = name.range(of: #" \(\d+\)$"#, options: .regularExpression) { name.removeSubrange(suffix) }
+        return name.trimmingCharacters(in: .whitespaces)
+    }
+
+    /// Instance names ordered by how much they say about the device, duplicates removed.
+    nonisolated static func names(from records: [ServiceRecord]) -> [String] {
+        let ranked = records.sorted { a, b in
+            let ia = identityTypes.firstIndex(of: a.serviceType) ?? identityTypes.count
+            let ib = identityTypes.firstIndex(of: b.serviceType) ?? identityTypes.count
+            return ia != ib ? ia < ib : a.name < b.name
+        }
+        var names: [String] = []
+        for record in ranked where !record.name.isEmpty && !names.contains(record.name) && record.serviceType != "_device-info._tcp" {
+            names.append(record.name)
+        }
+        return names
     }
 
     /// What Bonjour knows about one address.
@@ -115,8 +159,7 @@ final class MDNSDiscovery {
         let records = services(for: host.ip)
         var info = DeviceInfo()
         info.services = Array(Set(records.map(\.displayType)).subtracting(["Infos appareil"])).sorted()
-        var names: [String] = []
-        for record in records where !names.contains(record.name) && record.displayType != "Infos appareil" { names.append(record.name) }
+        let names = Self.names(from: records)
         info.names = names
         info.model = records.compactMap(\.model).first ?? deviceInfoModel(for: host, names: names)
         return info
@@ -156,10 +199,15 @@ final class MDNSDiscovery {
     private func handle(results: Set<NWBrowser.Result>, type: String, displayType: String, run: UUID) {
         var endpoints: [String: (endpoint: NWEndpoint, name: String, model: String?)] = [:]
         for result in results {
-            guard case .service(let name, _, let domain, let interface) = result.endpoint else { continue }
-            let id = "\(type)|\(domain)|\(name)|\(interface?.index ?? 0)"
+            guard case .service(let rawName, _, let domain, let interface) = result.endpoint else { continue }
+            let id = "\(type)|\(domain)|\(rawName)|\(interface?.index ?? 0)"
             var model: String?
-            if case .bonjour(let txt) = result.metadata { model = Self.modelHint(from: txt) }
+            var name = Self.cleanName(rawName, type: type)
+            if case .bonjour(let txt) = result.metadata {
+                model = Self.modelHint(from: txt)
+                // Cast devices publish a hash as instance name and their friendly name in TXT.
+                if type == "_googlecast._tcp", case .string(let friendly)? = txt.getEntry(for: "fn"), !friendly.isEmpty { name = friendly }
+            }
             endpoints[id] = (result.endpoint, name, model)
         }
         if type == "_device-info._tcp" {
@@ -181,12 +229,13 @@ final class MDNSDiscovery {
                 guard let connection else { return }
                 switch state {
                 case .ready:
-                    let host: NWEndpoint.Host?
-                    if let path = connection.currentPath, case .hostPort(let remote, _) = path.remoteEndpoint { host = remote } else { host = nil }
+                    var host: NWEndpoint.Host?
+                    var port: Int?
+                    if let path = connection.currentPath, case .hostPort(let remote, let remotePort) = path.remoteEndpoint { host = remote; port = Int(remotePort.rawValue) }
                     let ip = host.flatMap(Self.ipv4String)
                     Task { @MainActor in
                         guard let self, self.generation == run else { return }
-                        if let ip { self.inventory.accept(.init(displayType: displayType, serviceType: type, name: value.name, ip: ip, model: model), id: id, token: token) }
+                        if let ip { self.inventory.accept(.init(displayType: displayType, serviceType: type, name: value.name, ip: ip, port: port, model: model), id: id, token: token) }
                         self.rebuild()
                         if self.connections[id] === connection { self.connections.removeValue(forKey: id) }
                         connection.cancel()

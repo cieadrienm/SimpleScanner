@@ -153,6 +153,7 @@ struct TopBar: View {
                         .padding(.horizontal, 8)
                         .padding(.vertical, 4)
                         .background(RoundedRectangle(cornerRadius: 4).fill(active ? Theme.accent.swiftUI : Color.clear))
+                        .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .help(profile.description)

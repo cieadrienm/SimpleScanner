@@ -52,6 +52,7 @@ struct ExportSheet: View {
                 .foregroundStyle(selected ? Theme.background.swiftUI : Theme.textDim.swiftUI)
                 .padding(.horizontal, 10).padding(.vertical, 5)
                 .background(RoundedRectangle(cornerRadius: 5).fill(selected ? Theme.accent.swiftUI : Color.white.opacity(0.05)))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }
@@ -79,6 +80,7 @@ struct PortScanSheet: View {
                             .foregroundStyle(active ? Theme.background.swiftUI : Theme.textDim.swiftUI)
                             .padding(.horizontal, 10).padding(.vertical, 5)
                             .background(RoundedRectangle(cornerRadius: 5).fill(active ? Theme.accent.swiftUI : Color.white.opacity(0.05)))
+                            .contentShape(Rectangle())
                     }
                     .buttonStyle(.plain)
                 }

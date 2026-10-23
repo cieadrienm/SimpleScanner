@@ -81,14 +81,17 @@ struct DeviceList: View {
                                     change: model.scan.change(for: host),
                                     query: model.scan.searchQuery,
                                     selected: model.scan.selection.contains(host.id),
-                                    alternate: index % 2 == 1
+                                    alternate: index % 2 == 1,
+                                    openService: { service in
+                                        model.scan.selection = [host.id]
+                                        model.open(service: service, of: host)
+                                    },
+                                    openPort: { port in
+                                        model.scan.selection = [host.id]
+                                        model.open(port: port, of: host)
+                                    }
                                 )
                                 .id(host.id)
-                                .onTapGesture(count: 2) {
-                                    model.scan.selection = [host.id]
-                                    anchorID = host.id
-                                    model.revealInspector()
-                                }
                                 .onTapGesture { click(host, in: rows) }
                                 .contextMenu {
                                     DeviceContextMenu(model: model, ids: model.scan.selection.contains(host.id) ? model.scan.selection : [host.id])
@@ -114,10 +117,16 @@ struct DeviceList: View {
         }
     }
 
-    /// Plain click selects; ⌘ toggles; ⇧ extends from the anchor.
+    /// Plain click selects; ⌘ toggles; ⇧ extends from the anchor; the second click of a double-click opens the inspector.
     private func click(_ host: Host, in rows: [Host]) {
         listFocused = true
         let flags = NSApp.currentEvent?.modifierFlags ?? []
+        if NSApp.currentEvent?.clickCount == 2 {
+            model.scan.selection = [host.id]
+            anchorID = host.id
+            model.revealInspector()
+            return
+        }
         if flags.contains(.command) {
             if model.scan.selection.contains(host.id) { model.scan.selection.remove(host.id) } else { model.scan.selection.insert(host.id) }
             anchorID = host.id
@@ -213,6 +222,8 @@ struct DeviceRow: View {
     let query: String
     let selected: Bool
     let alternate: Bool
+    var openService: ((String) -> Void)? = nil
+    var openPort: ((Int) -> Void)? = nil
 
     private var classification: DeviceClassification { DeviceClassifier.assessment(host) }
 
@@ -293,10 +304,12 @@ struct DeviceRow: View {
                 let hidden = (host.services.count - services.count) + (host.openPorts.count - ports.count)
                 HStack(spacing: 4) {
                     ForEach(services, id: \.self) { service in
-                        Chip(text: service, tint: Theme.bonjour.swiftUI).fixedSize()
+                        let action = HostActions.action(forService: service, port: nil)
+                        ActionChip(text: service, tint: Theme.bonjour.swiftUI, help: action.map { "Ouvrir \($0.connection.label)" } ?? service, action: action == nil ? nil : { openService?(service) }).fixedSize()
                     }
                     ForEach(ports, id: \.self) { port in
-                        Chip(text: PortScanner.serviceName(for: port) ?? "\(port)", tint: Theme.tcp.swiftUI).fixedSize()
+                        let action = HostActions.action(forPort: port)
+                        ActionChip(text: PortScanner.serviceName(for: port) ?? "\(port)", tint: Theme.tcp.swiftUI, help: action.map { "Port \(port) : ouvrir \($0.connection.label)" } ?? "Port \(port)", action: action == nil ? nil : { openPort?(port) }).fixedSize()
                     }
                     if hidden > 0 {
                         Text("+\(hidden)").font(.system(size: 10, design: .monospaced)).foregroundStyle(Theme.textFaint.swiftUI).fixedSize()

@@ -118,6 +118,7 @@ struct IconButton: View {
                     RoundedRectangle(cornerRadius: 5)
                         .fill(active ? tint : Color.white.opacity(disabled ? 0.02 : (hovering ? 0.1 : 0.06)))
                 )
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(disabled)
@@ -164,6 +165,7 @@ struct TextButton: View {
                             : Color.white.opacity(disabled ? 0.02 : (hovering ? 0.11 : 0.07))
                     )
             )
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(disabled)
@@ -189,6 +191,33 @@ struct Chip: View {
                     .fill(filled ? tint : tint.opacity(0.14))
             )
             .lineLimit(1)
+    }
+}
+
+/// A chip that opens a connection when it can; a plain chip otherwise.
+struct ActionChip: View {
+    let text: String
+    var tint: Color = Theme.textDim.swiftUI
+    var help: String = ""
+    var action: (() -> Void)? = nil
+
+    @State private var hovering = false
+
+    var body: some View {
+        if let action {
+            Button(action: action) {
+                Chip(text: text, tint: tint, filled: hovering).contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .help(help)
+            .onHover { inside in
+                hovering = inside
+                if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+            }
+            .animation(.easeOut(duration: 0.12), value: hovering)
+        } else {
+            Chip(text: text, tint: tint).help(help)
+        }
     }
 }
 

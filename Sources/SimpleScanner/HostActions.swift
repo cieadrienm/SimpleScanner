@@ -6,7 +6,7 @@ import SimpleScannerCore
 @MainActor
 enum HostActions {
     enum Connection: String, CaseIterable, Identifiable {
-        case http, https, ssh, vnc, smb, afp, rdp, telnet, ping
+        case http, https, ssh, sftp, vnc, smb, afp, rdp, telnet, ping
         var id: String { rawValue }
 
         var label: String {
@@ -14,6 +14,7 @@ enum HostActions {
             case .http: "HTTP"
             case .https: "HTTPS"
             case .ssh: "SSH"
+            case .sftp: "SFTP"
             case .vnc: "Partage d'écran"
             case .smb: "SMB"
             case .afp: "AFP"
@@ -27,6 +28,7 @@ enum HostActions {
             switch self {
             case .http, .https: "globe"
             case .ssh: "terminal"
+            case .sftp: "arrow.down.doc"
             case .vnc: "display"
             case .smb, .afp: "folder"
             case .rdp: "pc"
@@ -41,6 +43,7 @@ enum HostActions {
             case .http: [80, 8080, 8000, 8008, 8081, 8888]
             case .https: [443, 8443]
             case .ssh: [22]
+            case .sftp: []
             case .vnc: [5900]
             case .smb: [445, 139]
             case .afp: [548]
@@ -58,12 +61,46 @@ enum HostActions {
         return dir
     }
 
-    static func open(_ connection: Connection, ip: String) {
+    /// What clicking a Bonjour service chip opens, if anything.
+    nonisolated static func action(forService displayType: String, port: Int?) -> (connection: Connection, port: Int?)? {
+        switch displayType {
+        case "SSH": (.ssh, nil)
+        case "SFTP": (.sftp, nil)
+        case "Partage d'écran": (.vnc, nil)
+        case "SMB": (.smb, nil)
+        case "AFP": (.afp, nil)
+        case "HTTP", "OSCQuery": (.http, port)
+        case "HTTPS": (.https, port)
+        case "IPP", "Imprimante", "Impression", "Scanner", "Philips Hue": (.http, nil)
+        default: nil
+        }
+    }
+
+    /// What clicking an open-port chip opens, if anything.
+    nonisolated static func action(forPort port: Int) -> (connection: Connection, port: Int?)? {
+        switch port {
+        case 22: (.ssh, nil)
+        case 23: (.telnet, nil)
+        case 80: (.http, nil)
+        case 443: (.https, nil)
+        case 445, 139: (.smb, nil)
+        case 548: (.afp, nil)
+        case 5900: (.vnc, nil)
+        case 3389: (.rdp, nil)
+        case 631, 1400, 3000, 5000, 8000, 8008, 8080, 8081, 8888, 9090, 10000, 32400: (.http, port)
+        case 5001, 8006, 8443: (.https, port)
+        default: nil
+        }
+    }
+
+    static func open(_ connection: Connection, ip: String, port: Int? = nil) {
         guard IPv4.uint32(from: ip) != nil else { return }
+        let suffix = port.map { ":\($0)" } ?? ""
         switch connection {
-        case .http: open(url: "http://\(ip)")
-        case .https: open(url: "https://\(ip)")
+        case .http: open(url: "http://\(ip)\(suffix)")
+        case .https: open(url: "https://\(ip)\(suffix)")
         case .ssh: runInTerminal(name: "ssh-\(ip)", command: "ssh", arguments: ip)
+        case .sftp: runInTerminal(name: "sftp-\(ip)", command: "sftp", arguments: ip)
         case .vnc: open(url: "vnc://\(ip)")
         case .smb: open(url: "smb://\(ip)")
         case .afp: open(url: "afp://\(ip)")

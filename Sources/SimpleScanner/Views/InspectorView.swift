@@ -199,11 +199,19 @@ struct InspectorView: View {
             SectionHeader("Services Bonjour")
             FlowLayout(spacing: 5) {
                 ForEach(model.mdns.services(for: host.ip), id: \.self) { record in
-                    Chip(text: "\(record.displayType) · \(record.name)", tint: Theme.bonjour.swiftUI)
-                        .help(record.serviceType)
+                    let action = HostActions.action(forService: record.displayType, port: record.port)
+                    ActionChip(
+                        text: "\(record.displayType) · \(record.name)",
+                        tint: Theme.bonjour.swiftUI,
+                        help: action.map { "Ouvrir \($0.connection.label)\($0.port.map { " sur le port \($0)" } ?? "")" } ?? record.serviceType,
+                        action: action.map { a in { HostActions.open(a.connection, ip: host.ip, port: a.port) } }
+                    )
                 }
                 if model.mdns.services(for: host.ip).isEmpty {
-                    ForEach(host.services, id: \.self) { Chip(text: $0, tint: Theme.bonjour.swiftUI) }
+                    ForEach(host.services, id: \.self) { service in
+                        let action = HostActions.action(forService: service, port: nil)
+                        ActionChip(text: service, tint: Theme.bonjour.swiftUI, help: action.map { "Ouvrir \($0.connection.label)" } ?? service, action: action.map { a in { HostActions.open(a.connection, ip: host.ip, port: a.port) } })
+                    }
                 }
             }
         }
@@ -227,7 +235,13 @@ struct InspectorView: View {
             } else {
                 FlowLayout(spacing: 5) {
                     ForEach(host.openPorts, id: \.self) { port in
-                        Chip(text: PortScanner.serviceName(for: port).map { "\(port) \($0)" } ?? "\(port)", tint: Theme.tcp.swiftUI)
+                        let action = HostActions.action(forPort: port)
+                        ActionChip(
+                            text: PortScanner.serviceName(for: port).map { "\(port) \($0)" } ?? "\(port)",
+                            tint: Theme.tcp.swiftUI,
+                            help: action.map { "Ouvrir \($0.connection.label)" } ?? "Port \(port) : aucune action connue",
+                            action: action.map { a in { HostActions.open(a.connection, ip: host.ip, port: a.port) } }
+                        )
                     }
                 }
             }
@@ -292,7 +306,8 @@ struct InspectorView: View {
         switch connection {
         case .http: service == "HTTP"
         case .https: service == "HTTPS"
-        case .ssh: service == "SSH" || service == "SFTP"
+        case .ssh: service == "SSH"
+        case .sftp: service == "SFTP"
         case .vnc: service == "Partage d'écran"
         case .smb: service == "SMB"
         case .afp: service == "AFP"
@@ -310,6 +325,7 @@ struct InspectorView: View {
             .foregroundStyle(disabled ? Theme.textFaint.swiftUI : (highlighted ? Theme.accent.swiftUI : Theme.text.swiftUI))
             .padding(.horizontal, 8).padding(.vertical, 6)
             .background(RoundedRectangle(cornerRadius: 5).fill(highlighted ? Theme.accent.swiftUI.opacity(0.12) : Color.white.opacity(0.05)))
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .disabled(disabled)

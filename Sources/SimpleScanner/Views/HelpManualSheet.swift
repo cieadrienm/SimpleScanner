@@ -75,6 +75,7 @@ struct HelpManualSheet: View {
                     }
                     .padding(.horizontal, 10).padding(.vertical, 7)
                     .background(RoundedRectangle(cornerRadius: 6).fill(isSelected ? Theme.laneSelected.swiftUI : Color.clear))
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
             }
@@ -107,8 +108,8 @@ struct HelpManualSheet: View {
             bullet("Identité", "nom DNS, NetBIOS, Bonjour, modèle, adresse MAC et fabricant (registre IEEE embarqué), latence, TTL.")
             bullet("Ce Mac, Passerelle", "deux badges sûrs : l'adresse de ce Mac (avec son modèle) et la passerelle par défaut du réseau.")
             bullet("Type estimé", "routeur / box, switch / point d'accès, Mac, PC Windows, Linux / Raspberry, téléphone / tablette, montre, TV / boîtier vidéo, enceinte, caméra, console, imprimante, NAS, serveur, objet connecté. Chaque indice (nom, fabricant, modèle Bonjour, ports, TTL, services) pèse un poids ; la famille en tête doit valoir le double de la suivante, sinon le type reste inconnu. « Probable » signale un seul indice faible, l'icône est alors estompée. Les indices sont listés sous l'identité.")
-            bullet("Services Bonjour", "chaque instance publiée par l'appareil, avec son nom.")
-            bullet("Ports ouverts", "ceux de la dernière analyse, avec le service habituel. « Analyser… » lance une analyse ciblée.")
+            bullet("Services Bonjour", "chaque instance publiée par l'appareil, avec son nom. Une puce cliquable ouvre la connexion : SSH ou SFTP dans Terminal, Partage d'écran, SMB ou AFP dans le Finder, HTTP/HTTPS et OSCQuery dans le navigateur sur le bon port.")
+            bullet("Ports ouverts", "ceux de la dernière analyse, avec le service habituel ; les puces des ports connus (22, 80, 443, 445, 548, 5900, 3389, 8080, 5000…) s'ouvrent de même. « Analyser… » lance une analyse ciblée.")
             bullet("Ping en direct", "une requête par seconde pendant que la fiche est ouverte : courbe, moyenne, min, max, perte.")
             bullet("Actions", "HTTP, HTTPS, SSH, Partage d'écran, SMB, AFP, Bureau à distance, Telnet, ping dans Terminal, Wake-on-LAN. Les actions en orange correspondent à un port ou un service vu.")
         case .memory:
