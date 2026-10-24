@@ -2,8 +2,8 @@
 
 ## Identité & Crédits
 - Compagnie : **cie Adrien M** (ou **Compagnie Adrien M**), Adrien Mondot. Adrien (spectacle vivant) est l'unique utilisateur ; il parle français.
-- Identifiant de bundle : `net.cieadrienm.simplescanner`. Famille : SimpleAudio, SimpleMIDIPlayer, Simple Recorder (même palette, mêmes composants, mêmes scripts).
-- Origine : fork d'[iPScanner](https://github.com/canberkys/iPScanner) de Canberk Kılıçarslan (MIT). `LICENSE` garde sa notice ; le dépôt est toujours dans le dossier `iPScanner/` et son `origin` pointe encore vers le dépôt amont : **ne jamais pousser** sans qu'Adrien ait changé le remote.
+- Identifiant de bundle : `net.cieadrienm.simplescanner`. Famille : SimpleAudio, SimpleMIDIPlayer, SimpleRecorder (même palette, mêmes composants, mêmes scripts).
+- Origine : fork d'[iPScanner](https://github.com/canberkys/iPScanner) de Canberk Kılıçarslan (MIT). Depuis le 24 octobre 2026 : licence GPL 3.0 ou ultérieure (`LICENSE`), la notice MIT d'origine est dans `LICENSE-iPScanner`. Le dossier local s'appelle toujours `iPScanner/`. Remotes : `origin` = github.com/cieadrienm/SimpleScanner (public) + Gitea `amcb/SimpleScanner` ; `upstream` = le dépôt d'origine de Canberk, **ne jamais y pousser**.
 
 ## Lire d'abord
 - `DECISIONS.md` — D1…, le pourquoi de chaque choix, et ce qui est remis à plus tard. **Ajouter une entrée pour tout choix structurant.**

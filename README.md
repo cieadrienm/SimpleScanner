@@ -1,6 +1,6 @@
 # SimpleScanner
 
-Scanner réseau natif, ultra-léger (~5 Mo, aucune dépendance) et rapide pour macOS, conçu dans le même esprit que **SimpleAudio**, **SimpleMIDIPlayer** et **Simple Recorder** (**cie Adrien M**). Issu d'[iPScanner](https://github.com/canberkys/iPScanner) de Canberk Kılıçarslan (MIT), réécrit autour d'un moteur ICMP natif et de l'interface sombre de la famille.
+Scanner réseau natif, ultra-léger (~5 Mo, aucune dépendance) et rapide pour macOS, conçu dans le même esprit que **SimpleAudio**, **SimpleMIDIPlayer** et **SimpleRecorder** (**cie Adrien M**). Issu d'[iPScanner](https://github.com/canberkys/iPScanner) de Canberk Kılıçarslan (MIT), réécrit autour d'un moteur ICMP natif et de l'interface sombre de la famille.
 
 ## Fonctionnalités
 
@@ -55,4 +55,12 @@ Aucune télémétrie, aucun compte, aucune connexion sortante hors de votre rés
 
 ## Crédits
 
-**cie Adrien M** (Compagnie Adrien M) — Bundle ID : `net.cieadrienm.simplescanner`. Dérivé d'iPScanner © Canberk Kılıçarslan, licence MIT ([LICENSE](LICENSE)).
+**cie Adrien M** (Compagnie Adrien M) — Bundle ID : `net.cieadrienm.simplescanner`. Dérivé d'iPScanner © Canberk Kılıçarslan, licence MIT ([LICENSE-iPScanner](LICENSE-iPScanner)).
+
+## Licence
+
+Copyright © 2026 Adrien Mondot, cie Adrien M.
+
+SimpleScanner est un logiciel libre, distribué sous la licence publique générale GNU (GPL) version 3 ou, au choix, toute version ultérieure. Il peut être utilisé, étudié, modifié et redistribué selon ses termes, sans aucune garantie. Texte complet : [`LICENSE`](LICENSE).
+
+Le code d'iPScanner dont il est issu reste © 2026 Canberk Kılıçarslan, sous licence MIT : [`LICENSE-iPScanner`](LICENSE-iPScanner).

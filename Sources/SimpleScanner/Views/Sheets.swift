@@ -249,7 +249,7 @@ struct AboutSheet: View {
                         Text("SimpleScanner").font(.system(size: 22, weight: .semibold)).foregroundStyle(Theme.text.swiftUI)
                         versionBadge
                     }
-                    Text("Scanner réseau natif, ultra-léger et rapide pour macOS — dans la lignée de SimpleAudio et Simple Recorder")
+                    Text("Scanner réseau natif, ultra-léger et rapide pour macOS — dans la lignée de SimpleAudio et SimpleRecorder")
                         .font(.system(size: 12.5, weight: .medium)).foregroundStyle(Theme.textDim.swiftUI)
                     HStack(spacing: 8) {
                         pill(icon: "bolt.fill", text: ICMPPinger.shared != nil ? "ICMP natif" : "ICMP indisponible", tint: ICMPPinger.shared != nil ? Theme.alive : Theme.textFaint)
@@ -283,7 +283,7 @@ struct AboutSheet: View {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 3) {
                     Text("Adrien Mondot · cie Adrien M").font(.system(size: 11.5, weight: .medium)).foregroundStyle(Theme.text.swiftUI)
-                    Text("Issu d'iPScanner de Canberk Kılıçarslan (licence MIT). Registre des fabricants : IEEE Standards Association. Aucune télémétrie.")
+                    Text("Licence GPL v3+. Issu d'iPScanner de Canberk Kılıçarslan (licence MIT). Registre des fabricants : IEEE Standards Association. Aucune télémétrie.")
                         .font(.system(size: 10.5)).foregroundStyle(Theme.textFaint.swiftUI).fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
