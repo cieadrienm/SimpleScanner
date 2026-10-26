@@ -9,7 +9,7 @@ struct TopBar: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            IconButton(symbol: "sidebar.left", helpText: "Afficher ou masquer la barre latérale (⌥⌘S)", active: model.showSidebar) {
+            IconButton(symbol: "sidebar.left", helpText: L("Afficher ou masquer la barre latérale (⌥⌘S)", "Show or hide the sidebar (⌥⌘S)"), active: model.showSidebar) {
                 model.showSidebar.toggle()
             }
 
@@ -19,7 +19,7 @@ struct TopBar: View {
             rangeField
             IconButton(
                 symbol: model.scan.isCurrentRangeSaved ? "star.fill" : "star",
-                helpText: model.scan.isCurrentRangeSaved ? "Retirer ce réseau des favoris" : "Garder ce réseau en favori",
+                helpText: model.scan.isCurrentRangeSaved ? L("Retirer ce réseau des favoris", "Remove this network from favorites") : L("Garder ce réseau en favori", "Save this network as a favorite"),
                 tint: Theme.accent.swiftUI,
                 disabled: model.scan.rangeInput.isEmpty || model.scan.importedTargets != nil
             ) {
@@ -37,7 +37,7 @@ struct TopBar: View {
 
             searchField
 
-            IconButton(symbol: "sidebar.right", helpText: "Afficher ou masquer la fiche de l'appareil (⌥⌘I)", active: model.showInspector) {
+            IconButton(symbol: "sidebar.right", helpText: L("Afficher ou masquer la fiche de l'appareil (⌥⌘I)", "Show or hide the device inspector (⌥⌘I)"), active: model.showInspector) {
                 model.toggleInspector()
             }
         }
@@ -58,7 +58,7 @@ struct TopBar: View {
                 }
             }
             if NetworkInterface.scannableInterfaces().isEmpty {
-                Text("Aucune interface réseau active")
+                Text(L("Aucune interface réseau active", "No active network interface"))
             }
             Divider()
             ForEach(model.scan.savedRanges) { saved in
@@ -73,7 +73,7 @@ struct TopBar: View {
                 Image(systemName: model.currentInterface?.isVPN == true ? "lock.shield" : "network")
                     .font(.system(size: 11, weight: .semibold))
                     .foregroundStyle(Theme.accent.swiftUI)
-                Text(model.currentInterface?.name ?? "Réseau")
+                Text(model.currentInterface?.name ?? L("Réseau", "Network"))
                     .font(.system(size: 11.5, weight: .medium))
                     .foregroundStyle(Theme.text.swiftUI)
                 Image(systemName: "chevron.down")
@@ -88,7 +88,7 @@ struct TopBar: View {
         .menuIndicator(.hidden)
         .fixedSize()
         .disabled(model.scan.isScanning)
-        .help("Choisir un réseau de ce Mac ou un favori")
+        .help(L("Choisir un réseau de ce Mac ou un favori", "Choose a network of this Mac or a favorite"))
     }
 
     @ViewBuilder
@@ -116,14 +116,14 @@ struct TopBar: View {
             })
             .frame(width: 236)
             .disabled(model.scan.isScanning)
-            .help("Adresse, CIDR ou plage ; plusieurs valeurs séparées par des virgules. Entrée lance le scan.")
+            .help(L("Adresse, CIDR ou plage ; plusieurs valeurs séparées par des virgules. Entrée lance le scan.", "Address, CIDR, or range; multiple values separated by commas. Return starts the scan."))
         }
     }
 
     private var scanButton: some View {
         Group {
             if model.scan.isScanning {
-                TextButton(title: "Arrêter", symbol: "stop.fill", destructive: true) { model.scan.stop() }
+                TextButton(title: L("Arrêter", "Stop"), symbol: "stop.fill", destructive: true) { model.scan.stop() }
                     .keyboardShortcut(".", modifiers: [.command])
                     .overlay(alignment: .topTrailing) {
                         Circle().fill(Theme.danger.swiftUI).frame(width: 6, height: 6)
@@ -133,11 +133,11 @@ struct TopBar: View {
                             .onDisappear { pulse = false }
                     }
             } else {
-                TextButton(title: "Scanner", symbol: "dot.radiowaves.left.and.right", prominent: true, disabled: !model.scan.canStart) { model.startScan() }
+                TextButton(title: L("Scanner", "Scan"), symbol: "dot.radiowaves.left.and.right", prominent: true, disabled: !model.scan.canStart) { model.startScan() }
             }
         }
         .animation(.easeOut(duration: 0.18), value: model.scan.isScanning)
-        .help(model.scan.isScanning ? "Arrêter le scan (⌘.)" : "Découvrir les appareils (⌘R)")
+        .help(model.scan.isScanning ? L("Arrêter le scan (⌘.)", "Stop scan (⌘.)") : L("Découvrir les appareils (⌘R)", "Discover devices (⌘R)"))
     }
 
     private var profilePicker: some View {
@@ -167,18 +167,18 @@ struct TopBar: View {
 
     private var toolsMenu: some View {
         Menu {
-            Button("Importer une liste de cibles…") { model.importTargetsPanel() }.disabled(model.scan.isScanning)
-            Button("Calculateur de sous-réseau…") {
+            Button(L("Importer une liste de cibles…", "Import Target List…")) { model.importTargetsPanel() }.disabled(model.scan.isScanning)
+            Button(L("Calculateur de sous-réseau…", "Subnet Calculator…")) {
                 if model.subnetInput.isEmpty { model.subnetInput = model.scan.rangeInput }
                 model.showSubnetCalculator = true
             }
             Divider()
-            Button("Analyser les ports de la sélection…") { model.beginPortScan() }
+            Button(L("Analyser les ports de la sélection…", "Scan Ports on Selection…")) { model.beginPortScan() }
                 .disabled(model.scan.selection.isEmpty || model.scan.isScanning)
-            Button("Wake-on-LAN sur la sélection") { model.wakeSelected() }
+            Button(L("Wake-on-LAN sur la sélection", "Wake-on-LAN on Selection")) { model.wakeSelected() }
                 .disabled(!model.scan.selectedHosts.contains { $0.mac != nil })
             Divider()
-            Picker("Rescan automatique", selection: $model.rescanInterval) {
+            Picker(L("Rescan automatique", "Auto-Rescan"), selection: $model.rescanInterval) {
                 ForEach(RescanInterval.allCases) { Text($0.menuLabel).tag($0) }
             }
         } label: {
@@ -191,7 +191,7 @@ struct TopBar: View {
         .menuStyle(.borderlessButton)
         .menuIndicator(.hidden)
         .fixedSize()
-        .help("Outils : import, sous-réseau, ports, Wake-on-LAN, rescan")
+        .help(L("Outils : import, sous-réseau, ports, Wake-on-LAN, rescan", "Tools: import, subnet calculator, ports, Wake-on-LAN, auto-rescan"))
         .popover(isPresented: $model.showSubnetCalculator, arrowEdge: .bottom) { SubnetCalculatorPopover(model: model) }
     }
 
@@ -201,7 +201,7 @@ struct TopBar: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 11, weight: .semibold))
                 .foregroundStyle(searchFocused ? Theme.accent.swiftUI : Theme.textDim.swiftUI)
-            TextField("Rechercher", text: $scan.searchQuery)
+            TextField(L("Rechercher", "Search"), text: $scan.searchQuery)
                 .textFieldStyle(.plain)
                 .font(.system(size: 11.5))
                 .foregroundStyle(Theme.text.swiftUI)
@@ -225,7 +225,7 @@ struct TopBar: View {
         )
         .animation(.easeOut(duration: 0.15), value: searchFocused)
         .animation(.easeOut(duration: 0.15), value: model.scan.searchQuery.isEmpty)
-        .help("Filtrer par adresse, nom, fabricant, MAC, modèle, service ou étiquette (⌘F)")
+        .help(L("Filtrer par adresse, nom, fabricant, MAC, modèle, service ou étiquette (⌘F)", "Filter by address, name, vendor, MAC, model, service, or label (⌘F)"))
     }
 }
 
@@ -234,29 +234,29 @@ struct SubnetCalculatorPopover: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader("Calculateur de sous-réseau")
+            SectionHeader(L("Calculateur de sous-réseau", "Subnet Calculator"))
             CommitField(value: model.subnetInput, placeholder: "10.0.0.0/24", monospaced: true) { model.subnetInput = $0 }
                 .frame(width: 280)
             if let summary = SubnetCalculator.summarize(model.subnetInput) {
                 VStack(alignment: .leading, spacing: 5) {
-                    row("Réseau", summary.network)
-                    row("Diffusion", summary.broadcast)
-                    row("Hôtes", summary.firstHost.flatMap { f in summary.lastHost.map { "\(f) → \($0)" } } ?? "—")
-                    row("Nombre", "\(summary.hostCount) utilisables")
-                    row("Masque", summary.netmask)
+                    row(L("Réseau", "Network"), summary.network)
+                    row(L("Diffusion", "Broadcast"), summary.broadcast)
+                    row(L("Hôtes", "Hosts"), summary.firstHost.flatMap { f in summary.lastHost.map { "\(f) → \($0)" } } ?? "—")
+                    row(L("Nombre", "Count"), L("\(summary.hostCount) utilisables", "\(summary.hostCount) usable"))
+                    row(L("Masque", "Netmask"), summary.netmask)
                     row("Wildcard", summary.wildcard)
                 }
                 HStack {
                     Spacer()
-                    TextButton(title: "Utiliser comme plage", symbol: "arrow.right", prominent: true, compact: true, disabled: model.scan.isScanning) {
+                    TextButton(title: L("Utiliser comme plage", "Use as Range"), symbol: "arrow.right", prominent: true, compact: true, disabled: model.scan.isScanning) {
                         model.setRange(summary.cidr)
                         model.showSubnetCalculator = false
                     }
                 }
             } else if !model.subnetInput.isEmpty {
-                Text("CIDR invalide. Essayez 10.0.0.0/24.").font(.system(size: 11)).foregroundStyle(Theme.danger.swiftUI)
+                Text(L("CIDR invalide (ex. 10.0.0.0/24).", "Invalid CIDR (e.g. 10.0.0.0/24).")).font(.system(size: 11)).foregroundStyle(Theme.danger.swiftUI)
             } else {
-                Text("Saisissez un CIDR IPv4 pour voir réseau, diffusion et plage d'hôtes.").font(.system(size: 11)).foregroundStyle(Theme.textDim.swiftUI)
+                Text(L("Saisir un CIDR IPv4 pour voir réseau, diffusion et plage d'hôtes.", "Enter an IPv4 CIDR to see network, broadcast, and host range.")).font(.system(size: 11)).foregroundStyle(Theme.textDim.swiftUI)
             }
         }
         .padding(14)

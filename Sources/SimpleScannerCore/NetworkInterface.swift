@@ -9,7 +9,7 @@ public struct NetworkInterfaceInfo: Hashable, Sendable {
     public var cidr: String { NetworkInterface.subnet(from: self) ?? "\(ipv4)/\(netmaskBits)" }
     public var isWiFi: Bool { name == "en0" || name == "en1" }
     public var isVPN: Bool { name.hasPrefix("utun") || name.hasPrefix("ppp") }
-    public var kindLabel: String { isVPN ? "VPN" : name.hasPrefix("bridge") ? "Pont" : "Ethernet / Wi-Fi" }
+    public var kindLabel: String { isVPN ? "VPN" : name.hasPrefix("bridge") ? L("Pont", "Bridge") : "Ethernet / Wi-Fi" }
 }
 
 public enum NetworkInterface {

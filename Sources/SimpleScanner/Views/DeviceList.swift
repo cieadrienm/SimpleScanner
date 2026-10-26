@@ -12,12 +12,12 @@ struct DeviceList: View {
         var title: String {
             switch self {
             case .status: ""
-            case .ip: "Adresse IP"
-            case .name: "Nom"
-            case .vendor: "Fabricant"
-            case .mac: "Adresse MAC"
-            case .services: "Services et ports"
-            case .latency: "Latence"
+            case .ip: L("Adresse IP", "IP Address")
+            case .name: L("Nom", "Name")
+            case .vendor: L("Fabricant", "Vendor")
+            case .mac: L("Adresse MAC", "MAC Address")
+            case .services: L("Services et ports", "Services & Ports")
+            case .latency: L("Latence", "Latency")
             }
         }
 
@@ -197,16 +197,16 @@ struct DeviceList: View {
             Image(systemName: "line.3.horizontal.decrease.circle")
                 .font(.system(size: 26))
                 .foregroundStyle(Theme.textFaint.swiftUI)
-            Text(model.scan.hasActiveScopeFilters || !model.scan.searchQuery.isEmpty ? "Aucun appareil ne correspond" : "Aucun appareil")
+            Text(model.scan.hasActiveScopeFilters || !model.scan.searchQuery.isEmpty ? L("Aucun appareil ne correspond", "No matching devices") : L("Aucun appareil", "No devices"))
                 .font(.system(size: 13, weight: .medium))
                 .foregroundStyle(Theme.textDim.swiftUI)
             if model.scan.hasActiveScopeFilters {
-                TextButton(title: "Retirer les filtres (\(model.scan.activeFilterNames.joined(separator: ", ")))", compact: true) {
+                TextButton(title: L("Retirer les filtres (\(model.scan.activeFilterNames.joined(separator: ", ")))", "Clear filters (\(model.scan.activeFilterNames.joined(separator: ", ")))"), compact: true) {
                     model.scan.clearScopeFilters()
                 }
             }
             if !model.scan.searchQuery.isEmpty {
-                TextButton(title: "Effacer la recherche", symbol: "xmark", compact: true) { model.scan.searchQuery = "" }
+                TextButton(title: L("Effacer la recherche", "Clear search"), symbol: "xmark", compact: true) { model.scan.searchQuery = "" }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -305,11 +305,12 @@ struct DeviceRow: View {
                 HStack(spacing: 4) {
                     ForEach(services, id: \.self) { service in
                         let action = HostActions.action(forService: service, port: nil)
-                        ActionChip(text: service, tint: Theme.bonjour.swiftUI, help: action.map { "Ouvrir \($0.connection.label)" } ?? service, action: action == nil ? nil : { openService?(service) }).fixedSize()
+                        let shown = MDNSDiscovery.displayService(service)
+                        ActionChip(text: shown, tint: Theme.bonjour.swiftUI, help: action.map { L("Ouvrir \($0.connection.label)", "Open \($0.connection.label)") } ?? shown, action: action == nil ? nil : { openService?(service) }).fixedSize()
                     }
                     ForEach(ports, id: \.self) { port in
                         let action = HostActions.action(forPort: port)
-                        ActionChip(text: PortScanner.serviceName(for: port) ?? "\(port)", tint: Theme.tcp.swiftUI, help: action.map { "Port \(port) : ouvrir \($0.connection.label)" } ?? "Port \(port)", action: action == nil ? nil : { openPort?(port) }).fixedSize()
+                        ActionChip(text: PortScanner.serviceName(for: port) ?? "\(port)", tint: Theme.tcp.swiftUI, help: action.map { L("Port \(port) : ouvrir \($0.connection.label)", "Port \(port): open \($0.connection.label)") } ?? L("Port \(port)", "Port \(port)"), action: action == nil ? nil : { openPort?(port) }).fixedSize()
                     }
                     if hidden > 0 {
                         Text("+\(hidden)").font(.system(size: 10, design: .monospaced)).foregroundStyle(Theme.textFaint.swiftUI).fixedSize()
@@ -346,7 +347,7 @@ struct DeviceRow: View {
                 .foregroundStyle(classification.type == .unknown ? Theme.textFaint.swiftUI : Theme.textDim.swiftUI)
                 .opacity(classification.type != .unknown && !classification.isCertain ? 0.7 : 1)
                 .frame(width: 18)
-                .help(classification.type == .unknown ? classification.evidence : (classification.isCertain ? classification.type.label : "Probablement : \(classification.type.label)"))
+                .help(classification.type == .unknown ? classification.evidence : (classification.isCertain ? classification.type.label : L("Probablement : \(classification.type.label)", "Probably: \(classification.type.label)")))
                 .contentTransition(.symbolEffect(.replace))
         }
     }
@@ -364,23 +365,23 @@ struct DeviceRow: View {
     }
 
     private var vendorFallback: String {
-        if let mac = host.mac, MACAddress(mac)?.kind == .local { return "Adresse privée" }
+        if let mac = host.mac, MACAddress(mac)?.kind == .local { return L("Adresse privée", "Private address") }
         switch host.vendorStatus {
-        case .localAddress: return "Adresse privée"
-        case .notFound: return "Fabricant inconnu"
+        case .localAddress: return L("Adresse privée", "Private address")
+        case .notFound: return L("Fabricant inconnu", "Unknown vendor")
         default: return "—"
         }
     }
 
     private var statusHelp: String {
         switch host.status {
-        case .scanning: return "Vérification en cours"
-        case .dead: return "Aucune réponse"
+        case .scanning: return L("Vérification en cours", "Checking…")
+        case .dead: return L("Aucune réponse", "No response")
         case .alive:
             switch host.discoveredBy {
-            case .arp: return "Présent (répond à ARP, pas au ping)"
-            case .tcp: return "Présent (port TCP ouvert, ping bloqué)"
-            default: return "Répond au ping"
+            case .arp: return L("Présent (répond à ARP, pas au ping)", "Present (answers ARP, not ping)")
+            case .tcp: return L("Présent (port TCP ouvert, ping bloqué)", "Present (open TCP port, ping blocked)")
+            default: return L("Répond au ping", "Responds to ping")
             }
         }
     }
@@ -416,33 +417,33 @@ struct DeviceContextMenu: View {
 
     var body: some View {
         if hosts.count == 1, let host = hosts.first {
-            Button("Fiche de l'appareil") { model.scan.selection = ids; model.revealInspector() }
-            Button("Nommer…") { model.scan.selection = ids; model.revealInspector(); model.labelFocusRequest += 1 }
+            Button(L("Fiche de l'appareil", "Device Inspector")) { model.scan.selection = ids; model.revealInspector() }
+            Button(L("Nommer…", "Name…")) { model.scan.selection = ids; model.revealInspector(); model.labelFocusRequest += 1 }
             Divider()
-            Menu("Se connecter") {
+            Menu(L("Se connecter", "Connect")) {
                 ForEach(HostActions.Connection.allCases) { connection in
                     Button(connection.label, systemImage: connection.symbol) { HostActions.open(connection, ip: host.ip) }
                 }
             }
-            Button("Analyser les ports…") { model.beginPortScan(ids: ids) }.disabled(model.scan.isScanning)
-            Button("Actualiser") { model.scan.selection = ids; model.refreshSelected() }.disabled(model.scan.isScanning)
+            Button(L("Analyser les ports…", "Scan Ports…")) { model.beginPortScan(ids: ids) }.disabled(model.scan.isScanning)
+            Button(L("Actualiser", "Refresh")) { model.scan.selection = ids; model.refreshSelected() }.disabled(model.scan.isScanning)
             Button("Wake-on-LAN") { Task { await model.scan.runWakeOnLAN(for: ids) } }.disabled(host.mac == nil)
             Divider()
-            Button("Copier l'adresse IP") { model.copy(host.ip, what: "Adresse") }
-            if let name = host.displayName { Button("Copier le nom") { model.copy(name, what: "Nom") } }
-            if let mac = host.mac { Button("Copier l'adresse MAC") { model.copy(mac, what: "Adresse MAC") } }
+            Button(L("Copier l'adresse IP", "Copy IP Address")) { model.copy(host.ip, what: L("Adresse", "Address")) }
+            if let name = host.displayName { Button(L("Copier le nom", "Copy Name")) { model.copy(name, what: L("Nom", "Name")) } }
+            if let mac = host.mac { Button(L("Copier l'adresse MAC", "Copy MAC Address")) { model.copy(mac, what: L("Adresse MAC", "MAC address")) } }
             Divider()
-            Button("Retirer de la liste") { model.scan.deleteHosts(ids) }
+            Button(L("Retirer de la liste", "Remove from List")) { model.scan.deleteHosts(ids) }
         } else {
-            Text(Format.count(hosts.count, "appareil sélectionné", "appareils sélectionnés"))
+            Text(L(Format.count(hosts.count, "appareil sélectionné", "appareils sélectionnés"), Format.count(hosts.count, "selected device", "selected devices")))
             Divider()
-            Button("Analyser les ports…") { model.beginPortScan(ids: ids) }.disabled(model.scan.isScanning)
-            Button("Actualiser") { model.scan.selection = ids; model.refreshSelected() }.disabled(model.scan.isScanning)
+            Button(L("Analyser les ports…", "Scan Ports…")) { model.beginPortScan(ids: ids) }.disabled(model.scan.isScanning)
+            Button(L("Actualiser", "Refresh")) { model.scan.selection = ids; model.refreshSelected() }.disabled(model.scan.isScanning)
             Button("Wake-on-LAN") { Task { await model.scan.runWakeOnLAN(for: ids) } }.disabled(!hosts.contains { $0.mac != nil })
             Divider()
-            Button("Copier les adresses IP") { model.scan.selection = ids; model.copySelectedIPs() }
+            Button(L("Copier les adresses IP", "Copy IP Addresses")) { model.scan.selection = ids; model.copySelectedIPs() }
             Divider()
-            Button("Retirer de la liste") { model.scan.deleteHosts(ids) }
+            Button(L("Retirer de la liste", "Remove from List")) { model.scan.deleteHosts(ids) }
         }
     }
 }

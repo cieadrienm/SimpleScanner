@@ -1,4 +1,5 @@
 import AppKit
+import SimpleScannerCore
 import SwiftUI
 
 /// The dark palette of the Simple family (SimpleAudio, Montage, OSCScore), plus the scanner's states.
@@ -64,14 +65,15 @@ enum Format {
     /// `12 ms`, `0,4 ms`, `—`.
     static func latency(_ ms: Double?) -> String {
         guard let ms, ms.isFinite else { return "—" }
-        if ms < 1 { return String(format: "%.1f ms", ms).replacingOccurrences(of: ".", with: ",") }
-        if ms < 10 { return String(format: "%.1f ms", ms).replacingOccurrences(of: ".", with: ",") }
+        let dec = L(",", ".")
+        if ms < 1 { return String(format: "%.1f ms", ms).replacingOccurrences(of: ".", with: dec) }
+        if ms < 10 { return String(format: "%.1f ms", ms).replacingOccurrences(of: ".", with: dec) }
         return String(format: "%.0f ms", ms)
     }
 
     /// `2,4 s`, `0:12`.
     static func elapsed(_ seconds: TimeInterval) -> String {
-        if seconds < 60 { return String(format: "%.1f s", seconds).replacingOccurrences(of: ".", with: ",") }
+        if seconds < 60 { return String(format: "%.1f s", seconds).replacingOccurrences(of: ".", with: L(",", ".")) }
         let total = Int(seconds)
         return String(format: "%d:%02d", total / 60, total % 60)
     }
@@ -82,7 +84,7 @@ enum Format {
         switch ttl {
         case 60...64: return "Unix / Apple / Linux (TTL \(ttl))"
         case 120...128: return "Windows (TTL \(ttl))"
-        case 250...255: return "Équipement réseau (TTL \(ttl))"
+        case 250...255: return L("Équipement réseau (TTL \(ttl))", "Network gear (TTL \(ttl))")
         default: return "TTL \(ttl)"
         }
     }

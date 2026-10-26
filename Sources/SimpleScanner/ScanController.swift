@@ -68,11 +68,11 @@ final class ScanController {
 
     var activeFilterNames: [String] {
         var names: [String] = []
-        if filterHasOpenPorts { names.append("Ports ouverts") }
-        if filterHasLabel { names.append("Nommés") }
-        if filterHasVendor { names.append("Fabricant connu") }
-        if filterIdentifiedDevice { names.append("Type identifié") }
-        if let filterService { names.append(filterService) }
+        if filterHasOpenPorts { names.append(L("Ports ouverts", "Open ports")) }
+        if filterHasLabel { names.append(L("Nommés", "Named")) }
+        if filterHasVendor { names.append(L("Fabricant connu", "Known vendor")) }
+        if filterIdentifiedDevice { names.append(L("Type identifié", "Identified type")) }
+        if let filterService { names.append(MDNSDiscovery.displayService(filterService)) }
         return names
     }
 
@@ -141,7 +141,10 @@ final class ScanController {
         if filterHasLabel { visible = visible.filter { label(for: $0) != nil } }
         if filterHasVendor { visible = visible.filter { ($0.vendor?.isEmpty == false) } }
         if filterIdentifiedDevice { visible = visible.filter { DeviceClassifier.classify($0) != .unknown } }
-        if let filterService { visible = visible.filter { $0.services.contains(filterService) } }
+        if let filterService {
+            let target = MDNSDiscovery.displayService(filterService)
+            visible = visible.filter { $0.services.contains(filterService) || $0.services.map(MDNSDiscovery.displayService).contains(target) }
+        }
         let rows: [Host]
         if searchQuery.isEmpty {
             rows = visible
@@ -263,15 +266,15 @@ final class ScanController {
         if let imported = importedTargets { return .success(imported.targets) }
         let parsed = ScanRange.parseAll(rangeInput)
         if let badIdx = parsed.firstInvalidIndex {
-            return .failure(TargetError(description: "Plage invalide (élément \(badIdx)). Exemples : 10.0.0.0/24, 192.168.1.50-192.168.1.100"))
+            return .failure(TargetError(description: L("Plage invalide (élément \(badIdx)). Exemples : 10.0.0.0/24, 192.168.1.50-192.168.1.100", "Invalid range (item \(badIdx)). Examples: 10.0.0.0/24, 192.168.1.50-192.168.1.100")))
         }
-        guard !parsed.ranges.isEmpty else { return .failure(TargetError(description: "Saisissez une plage d'adresses (par ex. 192.168.1.0/24).")) }
+        guard !parsed.ranges.isEmpty else { return .failure(TargetError(description: L("Saisir une plage d'adresses (par ex. 192.168.1.0/24).", "Enter an address range (e.g. 192.168.1.0/24)."))) }
         let totalHosts = ScanRange.totalHostCount(parsed.ranges)
         if totalHosts > Self.maxTargets {
-            return .failure(TargetError(description: "Plage trop grande (\(totalHosts) adresses). Réduisez-la ou scindez-la."))
+            return .failure(TargetError(description: L("Plage trop grande (\(totalHosts) adresses). Réduisez-la ou scindez-la.", "Range too large (\(totalHosts) addresses). Narrow or split it.")))
         }
         let addresses = ScanRange.uniqueAddresses(parsed.ranges)
-        guard !addresses.isEmpty else { return .failure(TargetError(description: "Aucune adresse à sonder.")) }
+        guard !addresses.isEmpty else { return .failure(TargetError(description: L("Aucune adresse à sonder.", "No address to probe."))) }
         return .success(addresses)
     }
 
@@ -283,7 +286,7 @@ final class ScanController {
         case .failure(let error): lastError = error.description; return
         }
         if addresses.count > Self.maxTargets {
-            lastError = "Liste trop grande (\(addresses.count) adresses). Réduisez-la ou scindez-la."
+            lastError = L("Liste trop grande (\(addresses.count) adresses). Réduisez-la ou scindez-la.", "List too large (\(addresses.count) addresses). Narrow or split it.")
             return
         }
 

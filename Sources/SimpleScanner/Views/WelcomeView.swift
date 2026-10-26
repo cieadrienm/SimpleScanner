@@ -11,7 +11,7 @@ struct WelcomeView: View {
                 .padding(.bottom, 4)
 
             VStack(spacing: 6) {
-                Text(model.scan.isScanning ? "Découverte en cours" : "SimpleScanner")
+                Text(model.scan.isScanning ? L("Découverte en cours", "Discovering Devices") : "SimpleScanner")
                     .font(.system(size: 20, weight: .semibold))
                     .foregroundStyle(Theme.text.swiftUI)
                     .contentTransition(.opacity)
@@ -25,11 +25,11 @@ struct WelcomeView: View {
 
             if !model.scan.isScanning {
                 HStack(spacing: 10) {
-                    TextButton(title: "Scanner \(model.scan.importedTargets == nil ? model.scan.rangeInput : "la liste")", symbol: "dot.radiowaves.left.and.right", prominent: true, disabled: !model.scan.canStart) {
+                    TextButton(title: L("Scanner \(model.scan.importedTargets == nil ? model.scan.rangeInput : "la liste")", "Scan \(model.scan.importedTargets == nil ? model.scan.rangeInput : "list")"), symbol: "dot.radiowaves.left.and.right", prominent: true, disabled: !model.scan.canStart) {
                         model.startScan()
                     }
-                    TextButton(title: "Ouvrir un scan…", symbol: "folder") { model.openSnapshotPanel() }
-                    TextButton(title: "Importer des cibles…", symbol: "doc.text") { model.importTargetsPanel() }
+                    TextButton(title: L("Ouvrir un scan…", "Open Scan…"), symbol: "folder") { model.openSnapshotPanel() }
+                    TextButton(title: L("Importer des cibles…", "Import Targets…"), symbol: "doc.text") { model.importTargetsPanel() }
                 }
                 .transition(.opacity.combined(with: .scale(scale: 0.96)))
             }
@@ -45,11 +45,11 @@ struct WelcomeView: View {
             }
 
             HStack(spacing: 18) {
-                shortcutHint("⌘R", "Scanner")
-                shortcutHint("⌘F", "Rechercher")
-                shortcutHint("⌥⌘I", "Fiche")
-                shortcutHint("⌘P", "Ports")
-                shortcutHint("⌘E", "Exporter")
+                shortcutHint("⌘R", L("Scanner", "Scan"))
+                shortcutHint("⌘F", L("Rechercher", "Find"))
+                shortcutHint("⌥⌘I", L("Fiche", "Inspector"))
+                shortcutHint("⌘P", L("Ports", "Ports"))
+                shortcutHint("⌘E", L("Exporter", "Export"))
             }
             .padding(.top, 8)
         }
@@ -60,13 +60,13 @@ struct WelcomeView: View {
 
     private var subtitle: String {
         if case .scanning(let scanned, let total) = model.scan.state, model.scan.phase == .discovery {
-            return "\(scanned) adresses sondées sur \(total)"
+            return L("\(scanned) adresses sondées sur \(total)", "\(scanned) of \(total) addresses probed")
         }
-        if model.scan.isScanning { return model.scan.phase.rawValue }
-        if case .done = model.scan.state { return "Aucun appareil n'a répondu sur \(model.scan.rangeInput). Essayez le profil Standard, ou vérifiez l'autorisation Réseau local." }
-        if let imported = model.scan.importedTargets { return "\(Format.count(imported.targets.count, "cible")) depuis \(imported.url.lastPathComponent)" }
-        if model.scan.rangeInput.isEmpty { return "Choisissez un réseau dans la barre haute, ou saisissez une plage d'adresses." }
-        return "Les appareils de \(model.scan.rangeInput) apparaîtront ici au fil de la découverte."
+        if model.scan.isScanning { return model.scan.phase.label }
+        if case .done = model.scan.state { return L("Aucun appareil n'a répondu sur \(model.scan.rangeInput). Essayer le profil Standard, ou vérifier l'autorisation Réseau local.", "No device responded on \(model.scan.rangeInput). Try the Standard profile, or check Local Network permission.") }
+        if let imported = model.scan.importedTargets { return L("\(Format.count(imported.targets.count, "cible")) depuis \(imported.url.lastPathComponent)", "\(Format.count(imported.targets.count, "target")) from \(imported.url.lastPathComponent)") }
+        if model.scan.rangeInput.isEmpty { return L("Choisir un réseau dans la barre haute, ou saisir une plage d'adresses.", "Choose a network in the top bar, or enter an address range.") }
+        return L("Les appareils de \(model.scan.rangeInput) apparaîtront ici au fil de la découverte.", "Devices on \(model.scan.rangeInput) will appear here as they are discovered.")
     }
 
     private func shortcutHint(_ key: String, _ label: String) -> some View {

@@ -130,10 +130,10 @@ final class ExportServiceTests: XCTestCase {
             scannedTotal: 254,
             aliveCount: 5
         )
-        XCTAssertTrue(out.contains("Rapport SimpleScanner"))
-        XCTAssertTrue(out.contains("Plage : 10.0.0.0/24"))
-        XCTAssertTrue(out.contains("Adresses sondées : 254"))
-        XCTAssertTrue(out.contains("Appareils trouvés : 5"))
+        XCTAssertTrue(out.contains(L("Rapport SimpleScanner", "SimpleScanner Report")))
+        XCTAssertTrue(out.contains(L("Plage : 10.0.0.0/24", "Range: 10.0.0.0/24")))
+        XCTAssertTrue(out.contains(L("Adresses sondées : 254", "Addresses probed: 254")))
+        XCTAssertTrue(out.contains(L("Appareils trouvés : 5", "Devices found: 5")))
     }
 
     func testTextReportRendersRows() {

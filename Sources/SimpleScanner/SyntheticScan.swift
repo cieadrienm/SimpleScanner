@@ -24,11 +24,13 @@ enum SyntheticScan {
         ]
     }
 
-    static let labels: [String: String] = [
-        "f0:18:98:4c:2a:7d": "Mac Studio régie #scène",
-        "dc:a6:32:7b:90:14": "Raspberry OSC #scène",
-        "9c:8e:99:3a:11:52": "Imprimante bureau",
-    ]
+    static var labels: [String: String] {
+        [
+            "f0:18:98:4c:2a:7d": L("Mac Studio régie #scène", "Booth Mac Studio #stage"),
+            "dc:a6:32:7b:90:14": L("Raspberry OSC #scène", "OSC Raspberry #stage"),
+            "9c:8e:99:3a:11:52": L("Imprimante bureau", "Office printer"),
+        ]
+    }
 
     static func snapshot(createdAt: Date = Date(timeIntervalSince1970: 1_792_000_000)) -> ScanSnapshot {
         ScanSnapshot(createdAt: createdAt, rangeInput: range, hosts: hosts().map(ScanSnapshot.HostRecord.init), labels: labels)

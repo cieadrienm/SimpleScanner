@@ -20,8 +20,8 @@ public enum TargetFileParser {
 
         public var errorDescription: String? {
             switch self {
-            case .unreadable(let url): "Impossible de lire \(url.lastPathComponent)."
-            case .noTargets: "Le fichier ne contient aucune adresse IP, CIDR ou plage valide."
+            case .unreadable(let url): L("Impossible de lire \(url.lastPathComponent).", "Could not read \(url.lastPathComponent).")
+            case .noTargets: L("Le fichier ne contient aucune adresse IP, CIDR ou plage valide.", "The file contains no valid IP address, CIDR, or range.")
             }
         }
     }

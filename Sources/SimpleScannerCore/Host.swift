@@ -19,8 +19,8 @@ public struct Host: Identifiable, Hashable, Sendable {
 
         public var label: String {
             switch self {
-            case .thisMac: "Ce Mac"
-            case .gateway: "Passerelle"
+            case .thisMac: L("Ce Mac", "This Mac")
+            case .gateway: L("Passerelle", "Gateway")
             }
         }
     }

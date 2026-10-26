@@ -14,9 +14,9 @@ public enum HostChange: Equatable, Sendable {
 
         public var label: String {
             switch self {
-            case .hostname: "nom"
+            case .hostname: L("nom", "name")
             case .mac: "MAC"
-            case .vendor: "fabricant"
+            case .vendor: L("fabricant", "vendor")
             case .openPorts: "ports"
             case .serviceTitle: "service"
             }
@@ -33,9 +33,9 @@ public enum HostChange: Equatable, Sendable {
 
     public var label: String {
         switch self {
-        case .new: "Nouveau"
-        case .modified(let fields): "Modifié : " + fields.map(\.label).joined(separator: ", ")
-        case .missing: "Disparu"
+        case .new: L("Nouveau", "New")
+        case .modified(let fields): L("Modifié : ", "Modified: ") + fields.map(\.label).joined(separator: ", ")
+        case .missing: L("Disparu", "Missing")
         }
     }
 }

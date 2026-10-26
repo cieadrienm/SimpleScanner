@@ -7,6 +7,7 @@ struct ContentView: View {
     @State private var dropTargeted = false
 
     var body: some View {
+        let _ = model.language
         VStack(spacing: 0) {
             TopBar(model: model)
             ScanProgressBar(fraction: model.scan.progressFraction, active: model.scan.isScanning, indeterminate: model.isIndeterminate)
@@ -14,10 +15,12 @@ struct ContentView: View {
 
             HStack(spacing: 0) {
                 if model.showSidebar {
-                    SidebarView(model: model)
-                        .frame(width: 222)
-                        .transition(.move(edge: .leading).combined(with: .opacity))
-                    Rectangle().fill(Theme.separator.swiftUI).frame(width: 1)
+                    HStack(spacing: 0) {
+                        SidebarView(model: model)
+                            .frame(width: 222)
+                        Rectangle().fill(Theme.separator.swiftUI).frame(width: 1)
+                    }
+                    .transition(.move(edge: .leading).combined(with: .opacity))
                 }
 
                 Group {
@@ -40,33 +43,45 @@ struct ContentView: View {
                 .onDrop(of: [.fileURL], isTargeted: $dropTargeted) { providers in handleDrop(providers) }
 
                 if model.showInspector {
-                    Rectangle().fill(Theme.separator.swiftUI).frame(width: 1)
-                    InspectorView(model: model)
-                        .frame(width: 300)
-                        .transition(.move(edge: .trailing).combined(with: .opacity))
+                    HStack(spacing: 0) {
+                        Rectangle().fill(Theme.separator.swiftUI).frame(width: 1)
+                        InspectorView(model: model)
+                            .frame(width: 300)
+                    }
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
                 }
             }
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .animation(.spring(duration: 0.32, bounce: 0.08), value: model.showSidebar)
-            .animation(.spring(duration: 0.32, bounce: 0.08), value: model.showInspector)
+            .clipped()
+            .animation(.spring(duration: 0.22, bounce: 0.0), value: model.showSidebar)
+            .animation(.spring(duration: 0.22, bounce: 0.0), value: model.showInspector)
 
             StatusBar(model: model)
         }
+        .id(model.language)
+        .environment(\.locale, model.language.locale)
         .background(Theme.background.swiftUI)
         .preferredColorScheme(.dark)
         .navigationTitle("SimpleScanner")
         .navigationSubtitle(subtitle)
-        .sheet(isPresented: $model.showExport) { ExportSheet(model: model) }
-        .sheet(isPresented: $model.showPortScan) { PortScanSheet(model: model) }
-        .sheet(isPresented: $model.showShortcuts) { ShortcutsSheet { model.showShortcuts = false } }
+        .sheet(isPresented: $model.showExport) { ExportSheet(model: model).id(model.language) }
+        .sheet(isPresented: $model.showPortScan) { PortScanSheet(model: model).id(model.language) }
+        .sheet(isPresented: $model.showShortcuts) { ShortcutsSheet { model.showShortcuts = false }.id(model.language) }
         .sheet(isPresented: $model.showHelp) {
             HelpManualSheet(openShortcuts: { DispatchQueue.main.async { model.showShortcuts = true } }) { model.showHelp = false }
+                .id(model.language)
         }
         .sheet(isPresented: $model.showAbout) {
             AboutSheet(model: model, openHelp: { DispatchQueue.main.async { model.showHelp = true } }) { model.showAbout = false }
+                .id(model.language)
+        }
+        .sheet(isPresented: $model.showUpdater) {
+            UpdateSheet(model: model) { model.showUpdater = false }
+                .id(model.language)
         }
         .sheet(item: $model.renamingRange) { saved in
             RenameRangeSheet(range: saved) { name in model.scan.renameSavedRange(saved.range, to: name) }
+                .id(model.language)
         }
         .alert(item: $model.alert) { alert in
             SwiftUI.Alert(title: Text(alert.title), message: Text(alert.message), dismissButton: .default(Text("OK")))
@@ -77,7 +92,7 @@ struct ContentView: View {
     }
 
     private var subtitle: String {
-        if let imported = model.scan.importedTargets { return "\(imported.url.lastPathComponent) · \(Format.count(imported.targets.count, "cible"))" }
+        if let imported = model.scan.importedTargets { return "\(imported.url.lastPathComponent) · \(Format.count(imported.targets.count, L("cible", "target")))" }
         if model.scan.isScanning { return "● \(model.scan.rangeInput)" }
         return model.scan.rangeInput
     }
@@ -98,9 +113,9 @@ struct ContentView: View {
                     } else {
                         do {
                             let summary = try model.scan.loadImportedFile(url: url)
-                            model.flash("\(Format.count(summary.targetCount, "cible")) importée\(summary.targetCount > 1 ? "s" : "")")
+                            model.flash(L("\(Format.count(summary.targetCount, "cible")) importée\(summary.targetCount > 1 ? "s" : "")", "\(Format.count(summary.targetCount, "target")) imported"))
                         } catch {
-                            model.alert = AppModel.Alert(title: "Import impossible", message: error.localizedDescription)
+                            model.alert = AppModel.Alert(title: L("Import impossible", "Could not import file"), message: error.localizedDescription)
                         }
                     }
                 }

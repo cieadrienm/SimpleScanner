@@ -1,0 +1,5 @@
+/* SimpleScanner InfoPlist — Français */
+"CFBundleDisplayName" = "SimpleScanner";
+"CFBundleName" = "SimpleScanner";
+"NSLocalNetworkUsageDescription" = "SimpleScanner découvre les appareils de votre réseau local par ping ICMP, table ARP, sondes TCP et Bonjour.";
+"NSHumanReadableCopyright" = "Adrien Mondot · cie Adrien M — issu d'iPScanner (MIT)";

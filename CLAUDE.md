@@ -6,6 +6,7 @@
 - Origine : fork d'[iPScanner](https://github.com/canberkys/iPScanner) de Canberk Kılıçarslan (MIT). Depuis le 24 octobre 2026 : licence GPL 3.0 ou ultérieure (`LICENSE`), la notice MIT d'origine est dans `LICENSE-iPScanner`. Le dossier local s'appelle toujours `iPScanner/`. Remotes : `origin` = github.com/cieadrienm/SimpleScanner (public) + Gitea `amcb/SimpleScanner` ; `upstream` = le dépôt d'origine de Canberk, **ne jamais y pousser**.
 
 ## Lire d'abord
+- `~/Programmation/SimpleFamily/GUIDELINES.md` — les règles communes de la famille Simple (G1…).
 - `DECISIONS.md` — D1…, le pourquoi de chaque choix, et ce qui est remis à plus tard. **Ajouter une entrée pour tout choix structurant.**
 - `README.md` — fonctionnalités, ligne de commande, limites.
 

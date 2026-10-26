@@ -55,15 +55,15 @@ public enum VendorStatus: String, Codable, Sendable {
 
     public var label: String {
         switch self {
-        case .matched: "Fabricant identifié (registre IEEE)"
-        case .localAddress: "Adresse MAC privée ou aléatoire"
-        case .nonUnicast: "Adresse de groupe ou de diffusion"
-        case .invalidAddress: "Adresse MAC invalide"
-        case .notFound: "Préfixe absent du registre IEEE"
-        case .macUnavailable: "Adresse MAC indisponible"
-        case .queryFailed: "Table ARP illisible"
-        case .databaseUnavailable: "Base des fabricants indisponible"
-        case .historical: "Information enregistrée, non actualisée"
+        case .matched: L("Fabricant identifié (registre IEEE)", "Vendor identified (IEEE registry)")
+        case .localAddress: L("Adresse MAC privée ou aléatoire", "Private or randomized MAC address")
+        case .nonUnicast: L("Adresse de groupe ou de diffusion", "Multicast or broadcast address")
+        case .invalidAddress: L("Adresse MAC invalide", "Invalid MAC address")
+        case .notFound: L("Préfixe absent du registre IEEE", "Prefix not in IEEE registry")
+        case .macUnavailable: L("Adresse MAC indisponible", "MAC address unavailable")
+        case .queryFailed: L("Table ARP illisible", "ARP table unreadable")
+        case .databaseUnavailable: L("Base des fabricants indisponible", "Vendor database unavailable")
+        case .historical: L("Information enregistrée, non actualisée", "Saved information, not refreshed")
         }
     }
 }

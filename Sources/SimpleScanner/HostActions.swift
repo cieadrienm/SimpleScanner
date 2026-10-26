@@ -15,12 +15,12 @@ enum HostActions {
             case .https: "HTTPS"
             case .ssh: "SSH"
             case .sftp: "SFTP"
-            case .vnc: "Partage d'écran"
+            case .vnc: L("Partage d'écran", "Screen Sharing")
             case .smb: "SMB"
             case .afp: "AFP"
-            case .rdp: "Bureau à distance"
+            case .rdp: L("Bureau à distance", "Remote Desktop")
             case .telnet: "Telnet"
-            case .ping: "Ping dans Terminal"
+            case .ping: L("Ping dans Terminal", "Ping in Terminal")
             }
         }
 
@@ -66,12 +66,12 @@ enum HostActions {
         switch displayType {
         case "SSH": (.ssh, nil)
         case "SFTP": (.sftp, nil)
-        case "Partage d'écran": (.vnc, nil)
+        case "Partage d'écran", "Screen Sharing": (.vnc, nil)
         case "SMB": (.smb, nil)
         case "AFP": (.afp, nil)
         case "HTTP", "OSCQuery": (.http, port)
         case "HTTPS": (.https, port)
-        case "IPP", "Imprimante", "Impression", "Scanner", "Philips Hue": (.http, nil)
+        case "IPP", "Imprimante", "Impression", "Printer", "Printing", "Scanner", "Philips Hue": (.http, nil)
         default: nil
         }
     }
@@ -114,13 +114,13 @@ enum HostActions {
             let url = cacheDir.appendingPathComponent("\(ip).rdp")
             let body = "full address:s:\(ip)\nscreen mode id:i:2\nprompt for credentials:i:1\n"
             do { try body.write(to: url, atomically: true, encoding: .utf8); open(url) }
-            catch { notify("Connexion Bureau à distance impossible", error.localizedDescription) }
+            catch { notify(L("Connexion Bureau à distance impossible", "Remote Desktop connection failed"), error.localizedDescription) }
         }
     }
 
     static func wakeAll(macs: [String]) async {
         let result = await WakeOnLAN.wakeAll(macs: macs)
-        notify("Wake-on-LAN", "Paquets envoyés : \(result.sent). Échecs : \(result.failed). L'envoi ne garantit pas que l'appareil s'est réveillé.")
+        notify("Wake-on-LAN", L("Paquets envoyés : \(result.sent). Échecs : \(result.failed). L'envoi ne garantit pas que l'appareil s'est réveillé.", "Packets sent: \(result.sent). Failed: \(result.failed). Sending a packet does not guarantee the device woke up."))
     }
 
     static func notify(_ title: String, _ message: String) {
@@ -144,16 +144,16 @@ enum HostActions {
 
     private static func open(_ url: URL) {
         guard NSWorkspace.shared.urlForApplication(toOpen: url) != nil else {
-            notify("Aucune application compatible", "Installez une application qui prend en charge ce type de connexion (\(url.scheme ?? url.pathExtension)).")
+            notify(L("Aucune application compatible", "No compatible application"), L("Installez une application qui prend en charge ce type de connexion (\(url.scheme ?? url.pathExtension)).", "Install an application that supports this connection type (\(url.scheme ?? url.pathExtension))."))
             return
         }
-        if !NSWorkspace.shared.open(url) { notify("Ouverture impossible", "L'application choisie n'a pas pu ouvrir cette connexion.") }
+        if !NSWorkspace.shared.open(url) { notify(L("Ouverture impossible", "Could not open connection"), L("L'application choisie n'a pas pu ouvrir cette connexion.", "The selected application could not open this connection.")) }
     }
 
     private static func runInTerminal(name: String, command: String, arguments: String) {
         let paths = ["/usr/bin/", "/sbin/", "/opt/homebrew/bin/", "/usr/local/bin/"]
         guard let executable = paths.map({ $0 + command }).first(where: { FileManager.default.isExecutableFile(atPath: $0) }) else {
-            notify("Commande indisponible", "La commande \(command) n'est pas installée sur ce Mac.")
+            notify(L("Commande indisponible", "Command unavailable"), L("La commande \(command) n'est pas installée sur ce Mac.", "The \(command) command is not installed on this Mac."))
             return
         }
         let url = cacheDir.appendingPathComponent("\(name).command")
@@ -162,7 +162,7 @@ enum HostActions {
             try script.write(to: url, atomically: true, encoding: .utf8)
             try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: url.path)
         } catch {
-            notify("Préparation de la commande impossible", error.localizedDescription)
+            notify(L("Préparation de la commande impossible", "Could not prepare command"), error.localizedDescription)
             return
         }
         open(url)

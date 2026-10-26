@@ -23,10 +23,10 @@ struct SidebarView: View {
 
     private var networks: some View {
         VStack(alignment: .leading, spacing: 6) {
-            SectionHeader("Réseaux de ce Mac")
+            SectionHeader(L("Réseaux de ce Mac", "This Mac's Networks"))
             let interfaces = NetworkInterface.scannableInterfaces()
             if interfaces.isEmpty {
-                Text("Aucune interface active").font(.system(size: 11)).foregroundStyle(Theme.textFaint.swiftUI)
+                Text(L("Aucune interface active", "No active interface")).font(.system(size: 11)).foregroundStyle(Theme.textFaint.swiftUI)
             }
             ForEach(interfaces, id: \.self) { iface in
                 let active = model.scan.rangeInput == iface.cidr && model.scan.importedTargets == nil
@@ -39,7 +39,7 @@ struct SidebarView: View {
 
     private var favourites: some View {
         VStack(alignment: .leading, spacing: 6) {
-            SectionHeader("Favoris") {
+            SectionHeader(L("Favoris", "Favorites")) {
                 Button {
                     model.scan.toggleSaveCurrentRange()
                 } label: {
@@ -48,10 +48,10 @@ struct SidebarView: View {
                 }
                 .buttonStyle(.plain)
                 .disabled(model.scan.rangeInput.isEmpty || model.scan.importedTargets != nil)
-                .help(model.scan.isCurrentRangeSaved ? "Retirer la plage actuelle des favoris" : "Garder la plage actuelle")
+                .help(model.scan.isCurrentRangeSaved ? L("Retirer la plage actuelle des favoris", "Remove current range from favorites") : L("Garder la plage actuelle", "Save current range"))
             }
             if model.scan.savedRanges.isEmpty {
-                Text("Gardez ici vos réseaux habituels : ☆ à côté de la plage.").font(.system(size: 11)).foregroundStyle(Theme.textFaint.swiftUI).fixedSize(horizontal: false, vertical: true)
+                Text(L("Réseaux habituels enregistrés avec ☆ à côté de la plage.", "Saved networks marked with ☆ next to the range.")).font(.system(size: 11)).foregroundStyle(Theme.textFaint.swiftUI).fixedSize(horizontal: false, vertical: true)
             }
             ForEach(model.scan.savedRanges) { saved in
                 let active = model.scan.rangeInput == saved.range && model.scan.importedTargets == nil
@@ -59,10 +59,10 @@ struct SidebarView: View {
                     model.scan.loadSavedRange(saved.range)
                 }
                 .contextMenu {
-                    Button("Renommer…") { model.renamingRange = saved }
-                    Button("Scanner maintenant") { model.scan.loadSavedRange(saved.range); model.startScan() }.disabled(model.scan.isScanning)
+                    Button(L("Renommer…", "Rename…")) { model.renamingRange = saved }
+                    Button(L("Scanner maintenant", "Scan Now")) { model.scan.loadSavedRange(saved.range); model.startScan() }.disabled(model.scan.isScanning)
                     Divider()
-                    Button("Retirer des favoris", role: .destructive) { model.scan.removeSavedRange(saved.range) }
+                    Button(L("Retirer des favoris", "Remove from Favorites"), role: .destructive) { model.scan.removeSavedRange(saved.range) }
                 }
             }
         }
@@ -70,27 +70,28 @@ struct SidebarView: View {
 
     private var bonjour: some View {
         VStack(alignment: .leading, spacing: 6) {
-            SectionHeader("Services Bonjour") {
+            SectionHeader(L("Services Bonjour", "Bonjour Services")) {
                 if model.scan.filterService != nil {
                     Button { model.scan.filterService = nil } label: {
                         Image(systemName: "xmark.circle.fill").font(.system(size: 11)).foregroundStyle(Theme.textDim.swiftUI)
                     }
                     .buttonStyle(.plain)
-                    .help("Ne plus filtrer par service")
+                    .help(L("Ne plus filtrer par service", "Clear service filter"))
                 }
             }
             let catalog = model.mdns.serviceCatalog
             if catalog.isEmpty {
-                Text(model.mdns.isRunning ? "À l'écoute du réseau…" : "Écoute Bonjour arrêtée").font(.system(size: 11)).foregroundStyle(Theme.textFaint.swiftUI)
+                Text(model.mdns.isRunning ? L("À l'écoute du réseau…", "Listening on the network…") : L("Écoute Bonjour arrêtée", "Bonjour listening stopped")).font(.system(size: 11)).foregroundStyle(Theme.textFaint.swiftUI)
             }
             ForEach(catalog, id: \.type) { entry in
                 let active = model.scan.filterService == entry.type
+                let shownType = MDNSDiscovery.displayService(entry.type)
                 Button {
                     model.scan.filterService = active ? nil : entry.type
                 } label: {
                     HStack(spacing: 7) {
                         Circle().fill(Theme.bonjour.swiftUI.opacity(active ? 1 : 0.5)).frame(width: 6, height: 6)
-                        Text(entry.type).font(.system(size: 11.5, weight: active ? .semibold : .regular)).foregroundStyle(active ? Theme.text.swiftUI : Theme.textDim.swiftUI).lineLimit(1)
+                        Text(shownType).font(.system(size: 11.5, weight: active ? .semibold : .regular)).foregroundStyle(active ? Theme.text.swiftUI : Theme.textDim.swiftUI).lineLimit(1)
                         Spacer()
                         Text("\(entry.count)").font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.textFaint.swiftUI).contentTransition(.numericText())
                     }
@@ -99,7 +100,7 @@ struct SidebarView: View {
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .help("N'afficher que les appareils offrant \(entry.type)")
+                .help(L("N'afficher que les appareils offrant \(shownType)", "Only show devices offering \(shownType)"))
             }
             .animation(.easeOut(duration: 0.2), value: catalog.map(\.type))
         }
@@ -108,12 +109,12 @@ struct SidebarView: View {
     private var filters: some View {
         @Bindable var scan = model.scan
         return VStack(alignment: .leading, spacing: 4) {
-            SectionHeader("Filtres")
-            filterToggle("Ports ouverts", symbol: "scope", isOn: $scan.filterHasOpenPorts)
-            filterToggle("Appareils nommés", symbol: "tag", isOn: $scan.filterHasLabel)
-            filterToggle("Fabricant connu", symbol: "building.2", isOn: $scan.filterHasVendor)
-            filterToggle("Type identifié", symbol: "sparkles", isOn: $scan.filterIdentifiedDevice)
-            filterToggle("Adresses sans réponse", symbol: "circle.dotted", isOn: $model.showDeadHosts)
+            SectionHeader(L("Filtres", "Filters"))
+            filterToggle(L("Ports ouverts", "Open ports"), symbol: "scope", isOn: $scan.filterHasOpenPorts)
+            filterToggle(L("Appareils nommés", "Named devices"), symbol: "tag", isOn: $scan.filterHasLabel)
+            filterToggle(L("Fabricant connu", "Known vendor"), symbol: "building.2", isOn: $scan.filterHasVendor)
+            filterToggle(L("Type identifié", "Identified type"), symbol: "sparkles", isOn: $scan.filterIdentifiedDevice)
+            filterToggle(L("Adresses sans réponse", "Unresponsive addresses"), symbol: "circle.dotted", isOn: $model.showDeadHosts)
         }
     }
 
@@ -166,9 +167,9 @@ struct RenameRangeSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Nommer le favori").font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.text.swiftUI)
+            Text(L("Nommer le favori", "Name Favorite")).font(.system(size: 14, weight: .semibold)).foregroundStyle(Theme.text.swiftUI)
             Text(range.range).font(.system(size: 11.5, design: .monospaced)).foregroundStyle(Theme.textDim.swiftUI)
-            TextField("Maison, Régie, Bureau…", text: $name)
+            TextField(L("Maison, Régie, Bureau…", "Home, Booth, Office…"), text: $name)
                 .textFieldStyle(.plain)
                 .font(.system(size: 12.5)).foregroundStyle(Theme.text.swiftUI)
                 .padding(.horizontal, 8).padding(.vertical, 6)
@@ -176,8 +177,8 @@ struct RenameRangeSheet: View {
                 .onSubmit { onCommit(name); dismiss() }
             HStack {
                 Spacer()
-                Button("Annuler") { dismiss() }.keyboardShortcut(.cancelAction)
-                Button("Enregistrer") { onCommit(name); dismiss() }.keyboardShortcut(.defaultAction)
+                Button(L("Annuler", "Cancel")) { dismiss() }.keyboardShortcut(.cancelAction)
+                Button(L("Enregistrer", "Save")) { onCommit(name); dismiss() }.keyboardShortcut(.defaultAction)
             }
         }
         .padding(20)

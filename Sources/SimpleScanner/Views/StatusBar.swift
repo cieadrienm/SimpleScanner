@@ -20,7 +20,7 @@ struct StatusBar: View {
 
             if let next = model.scan.nextRescanAt {
                 TimelineView(.periodic(from: .now, by: 1)) { context in
-                    Text("rescan dans \(Format.elapsed(max(0, next.timeIntervalSince(context.date))))")
+                    Text(L("rescan dans \(Format.elapsed(max(0, next.timeIntervalSince(context.date))))", "rescan in \(Format.elapsed(max(0, next.timeIntervalSince(context.date))))"))
                         .font(.system(size: 10.5, design: .monospaced)).foregroundStyle(Theme.textFaint.swiftUI)
                 }
             }
@@ -39,14 +39,14 @@ struct StatusBar: View {
                     .background(RoundedRectangle(cornerRadius: 4).fill(Color.white.opacity(0.06)))
                 }
                 .buttonStyle(.plain)
-                .help("Comparaison avec le scan du \(AppModel.dateFormatter.string(from: diff.baselineCreatedAt))")
+                .help(L("Comparaison avec le scan du \(AppModel.dateFormatter.string(from: diff.baselineCreatedAt))", "Comparison with scan from \(AppModel.dateFormatter.string(from: diff.baselineCreatedAt))"))
                 .popover(isPresented: $model.showDiff, arrowEdge: .top) { diffPopover(diff) }
                 Divider().frame(height: 12)
             }
 
             if !model.scan.warnings.isEmpty {
                 Button { model.showWarnings = true } label: {
-                    Label(Format.count(model.scan.warnings.count, "avertissement"), systemImage: "exclamationmark.triangle.fill")
+                    Label(Format.count(model.scan.warnings.count, L("avertissement", "warning")), systemImage: "exclamationmark.triangle.fill")
                         .font(.system(size: 10.5, weight: .medium))
                         .foregroundStyle(Theme.accent.swiftUI)
                 }
@@ -64,14 +64,26 @@ struct StatusBar: View {
             Divider().frame(height: 12)
 
             HStack(spacing: 12) {
-                Button { model.showHelp = true } label: { Text("? aide") }
-                    .buttonStyle(.plain).help("Guide d'utilisation (⌘?)")
-                Button { model.showShortcuts = true } label: { Text("⌘/ raccourcis") }
-                    .buttonStyle(.plain).help("Raccourcis clavier (⌘/)")
+                if case .updateAvailable(let rel) = model.updater.state {
+                    Button { model.showUpdater = true } label: {
+                        Text(L("↑ MAJ v\(rel.version)", "↑ Update v\(rel.version)"))
+                            .font(.system(size: 10, weight: .semibold, design: .monospaced))
+                            .foregroundStyle(Theme.background.swiftUI)
+                            .padding(.horizontal, 6)
+                            .padding(.vertical, 1.5)
+                            .background(Capsule().fill(Theme.accent.swiftUI))
+                    }
+                    .buttonStyle(.plain)
+                    .help(L("Une mise à jour (v\(rel.version)) est disponible", "An update (v\(rel.version)) is available"))
+                }
+                Button { model.showHelp = true } label: { Text(L("? aide", "? help")) }
+                    .buttonStyle(.plain).help(L("Guide d'utilisation (⌘?)", "User Guide (⌘?)"))
+                Button { model.showShortcuts = true } label: { Text(L("⌘/ raccourcis", "⌘/ shortcuts")) }
+                    .buttonStyle(.plain).help(L("Raccourcis clavier (⌘/)", "Keyboard Shortcuts (⌘/)"))
                 Button { model.showAbout = true } label: {
                     Text(AppVersion.current.shortLabel).foregroundStyle(Theme.textDim.swiftUI)
                 }
-                .buttonStyle(.plain).help("À propos de SimpleScanner \(AppVersion.current.description)")
+                .buttonStyle(.plain).help(L("À propos de SimpleScanner \(AppVersion.current.description)", "About SimpleScanner \(AppVersion.current.description)"))
             }
             .font(.system(size: 10.5, design: .monospaced))
             .foregroundStyle(Theme.textFaint.swiftUI)
@@ -87,21 +99,21 @@ struct StatusBar: View {
         let alive = model.scan.aliveCount
         let visible = model.visibleHosts.count
         if model.scan.hasResultConstraints, visible != alive {
-            parts.append("\(visible)/\(alive) appareils")
+            parts.append(L("\(visible)/\(alive) appareils", "\(visible)/\(alive) devices"))
         } else if alive > 0 || model.scan.hosts.count > 0 {
-            parts.append(Format.count(alive, "appareil"))
+            parts.append(Format.count(alive, L("appareil", "device")))
         }
-        if case .done(_, let total) = model.scan.state, total > 0 { parts.append(Format.count(total, "adresse")) }
-        else if case .scanning(_, let total) = model.scan.state, total > 0 { parts.append(Format.count(total, "adresse")) }
+        if case .done(_, let total) = model.scan.state, total > 0 { parts.append(Format.count(total, L("adresse", "address"), L("adresses", "addresses"))) }
+        else if case .scanning(_, let total) = model.scan.state, total > 0 { parts.append(Format.count(total, L("adresse", "address"), L("adresses", "addresses"))) }
         if model.scan.isScanning { parts.append(Format.elapsed(model.scan.elapsed)) }
         else if let duration = model.scan.lastDuration, duration > 0 { parts.append(Format.elapsed(duration)) }
-        if !model.scan.selection.isEmpty { parts.append(Format.count(model.scan.selection.count, "sélectionné")) }
+        if !model.scan.selection.isEmpty { parts.append(Format.count(model.scan.selection.count, L("sélectionné", "selected"), L("sélectionnés", "selected"))) }
         return parts.joined(separator: " · ")
     }
 
     private var warningsPopover: some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionHeader("Avertissements")
+            SectionHeader(L("Avertissements", "Warnings"))
             ForEach(Array(model.scan.warnings.enumerated()), id: \.offset) { _, warning in
                 VStack(alignment: .leading, spacing: 3) {
                     Label(warning.label, systemImage: "exclamationmark.triangle").font(.system(size: 11.5, weight: .medium)).foregroundStyle(Theme.text.swiftUI)
@@ -117,18 +129,18 @@ struct StatusBar: View {
 
     private func diffPopover(_ diff: SnapshotDiff) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            SectionHeader("Comparaison") {
-                Button("Effacer") { model.scan.clearComparison(); model.showDiff = false }.buttonStyle(.plain).font(.system(size: 10.5)).foregroundStyle(Theme.accent.swiftUI)
+            SectionHeader(L("Comparaison", "Comparison")) {
+                Button(L("Effacer", "Clear")) { model.scan.clearComparison(); model.showDiff = false }.buttonStyle(.plain).font(.system(size: 10.5)).foregroundStyle(Theme.accent.swiftUI)
             }
-            Text("Référence : scan du \(AppModel.dateFormatter.string(from: diff.baselineCreatedAt))").font(.system(size: 11)).foregroundStyle(Theme.textDim.swiftUI)
+            Text(L("Référence : scan du \(AppModel.dateFormatter.string(from: diff.baselineCreatedAt))", "Baseline: scan from \(AppModel.dateFormatter.string(from: diff.baselineCreatedAt))")).font(.system(size: 11)).foregroundStyle(Theme.textDim.swiftUI)
             HStack(spacing: 14) {
-                diffStat(diff.newCount, "nouveaux", Theme.alive.swiftUI)
-                diffStat(diff.modifiedCount, "modifiés", Theme.changed.swiftUI)
-                diffStat(diff.missingCount, "disparus", Theme.danger.swiftUI)
+                diffStat(diff.newCount, L("nouveaux", "new"), Theme.alive.swiftUI)
+                diffStat(diff.modifiedCount, L("modifiés", "modified"), Theme.changed.swiftUI)
+                diffStat(diff.missingCount, L("disparus", "missing"), Theme.danger.swiftUI)
             }
             if !diff.missingRecords.isEmpty {
                 Divider().overlay(Theme.separator.swiftUI)
-                Text("Disparus depuis la référence").font(.system(size: 10.5, weight: .semibold)).foregroundStyle(Theme.textDim.swiftUI)
+                Text(L("Disparus depuis la référence", "Missing since baseline")).font(.system(size: 10.5, weight: .semibold)).foregroundStyle(Theme.textDim.swiftUI)
                 ForEach(diff.missingRecords.sorted { IPv4.uint32(from: $0.ip) ?? 0 < IPv4.uint32(from: $1.ip) ?? 0 }.prefix(12), id: \.self) { record in
                     HStack(spacing: 8) {
                         Text(record.ip).font(.system(size: 11, design: .monospaced)).foregroundStyle(Theme.text.swiftUI)

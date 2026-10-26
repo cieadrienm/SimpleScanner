@@ -93,11 +93,11 @@ public enum ExportService {
     public static func textReport(rows: [Row], rangeInput: String, scannedTotal: Int, aliveCount: Int, now: Date = Date()) -> String {
         let formatter = DateFormatter()
         formatter.dateFormat = "yyyy-MM-dd HH:mm"
-        var out = "Rapport SimpleScanner\n"
-        out += "Généré le : \(formatter.string(from: now))\n"
-        if !rangeInput.isEmpty { out += "Plage : \(rangeInput)\n" }
-        out += "Adresses sondées : \(scannedTotal)\n"
-        out += "Appareils trouvés : \(aliveCount)\n"
+        var out = L("Rapport SimpleScanner\n", "SimpleScanner Report\n")
+        out += L("Généré le : \(formatter.string(from: now))\n", "Generated: \(formatter.string(from: now))\n")
+        if !rangeInput.isEmpty { out += L("Plage : \(rangeInput)\n", "Range: \(rangeInput)\n") }
+        out += L("Adresses sondées : \(scannedTotal)\n", "Addresses probed: \(scannedTotal)\n")
+        out += L("Appareils trouvés : \(aliveCount)\n", "Devices found: \(aliveCount)\n")
         out += String(repeating: "-", count: 60) + "\n"
 
         let ipWidth = max(15, rows.map { $0.ip.count }.max() ?? 15)
@@ -110,7 +110,7 @@ public enum ExportService {
         let vendorWidth = max(20, rows.map { ($0.vendor ?? "").count }.max() ?? 20)
         let statusWidth = max(8, rows.map { statusLabel($0.status).count }.max() ?? 8)
 
-        out += pad("IP", to: ipWidth) + "  " + pad("Nom", to: hostWidth) + "  " + pad("Fabricant", to: vendorWidth) + "  " + pad("État", to: statusWidth) + "  Ports\n"
+        out += pad("IP", to: ipWidth) + "  " + pad(L("Nom", "Name"), to: hostWidth) + "  " + pad(L("Fabricant", "Vendor"), to: vendorWidth) + "  " + pad(L("État", "Status"), to: statusWidth) + "  " + L("Ports", "Ports") + "\n"
         out += String(repeating: "-", count: 60) + "\n"
         for r in rows {
             let ports = r.openPorts.map(String.init).joined(separator: ", ")

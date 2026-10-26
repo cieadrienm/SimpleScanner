@@ -1,0 +1,21 @@
+/* SimpleScanner — English */
+"Scanner" = "Scan";
+"Arrêter" = "Stop";
+"Réseau" = "Network";
+"Outils" = "Tools";
+"Présentation" = "View";
+"Fichier" = "File";
+"Aide" = "Help";
+"Préférences…" = "Preferences…";
+"Langue" = "Language";
+"Système" = "System";
+"Français" = "Français";
+"English" = "English";
+"Ce Mac" = "This Mac";
+"Passerelle" = "Gateway";
+"Sans réponse" = "No response";
+"Exporter…" = "Export…";
+"Analyser les ports…" = "Scan Ports…";
+"Guide d'utilisation" = "User Guide";
+"Raccourcis clavier" = "Keyboard Shortcuts";
+"À propos de SimpleScanner" = "About SimpleScanner";

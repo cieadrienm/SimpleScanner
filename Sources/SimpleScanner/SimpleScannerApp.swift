@@ -24,63 +24,68 @@ struct SimpleScannerApp: App {
 
     @CommandsBuilder
     private func appCommands(model: AppModel) -> some Commands {
+        let _ = model.language
         CommandGroup(replacing: .appInfo) {
-            Button("À propos de SimpleScanner") { model.showAbout = true }
+            Button(L("À propos de SimpleScanner", "About SimpleScanner")) { model.showAbout = true }
+            Button(L("Rechercher des mises à jour…", "Check for Updates…")) {
+                model.showUpdater = true
+                model.updater.checkForUpdates(silent: false)
+            }
         }
 
         CommandGroup(replacing: .newItem) {
-            Button(model.scan.isScanning ? "Scan en cours…" : "Scanner le réseau") { model.startScan() }
+            Button(model.scan.isScanning ? L("Scan en cours…", "Scanning…") : L("Scanner le réseau", "Scan Network")) { model.startScan() }
                 .keyboardShortcut("r", modifiers: [.command])
                 .disabled(!model.scan.canStart)
-            Button("Arrêter le scan") { model.scan.stop() }
+            Button(L("Arrêter le scan", "Stop Scan")) { model.scan.stop() }
                 .keyboardShortcut(".", modifiers: [.command])
                 .disabled(!model.scan.isScanning)
             Divider()
-            Button("Ouvrir un scan…") { model.openSnapshotPanel() }
+            Button(L("Ouvrir un scan…", "Open Scan…")) { model.openSnapshotPanel() }
                 .keyboardShortcut("o", modifiers: [.command])
-            Button("Enregistrer le scan…") { model.saveSnapshotPanel() }
+            Button(L("Enregistrer le scan…", "Save Scan…")) { model.saveSnapshotPanel() }
                 .keyboardShortcut("s", modifiers: [.command])
                 .disabled(model.scan.hosts.isEmpty)
             Divider()
-            Button("Comparer à un scan…") { model.compareSnapshotPanel() }
+            Button(L("Comparer à un scan…", "Compare with Scan…")) { model.compareSnapshotPanel() }
                 .keyboardShortcut("o", modifiers: [.command, .shift])
-            Button("Effacer la comparaison") { model.scan.clearComparison() }
+            Button(L("Effacer la comparaison", "Clear Comparison")) { model.scan.clearComparison() }
                 .disabled(!model.scan.hasComparison)
             Divider()
-            Button("Importer une liste de cibles…") { model.importTargetsPanel() }
+            Button(L("Importer une liste de cibles…", "Import Target List…")) { model.importTargetsPanel() }
                 .keyboardShortcut("i", modifiers: [.command])
                 .disabled(model.scan.isScanning)
-            Button("Exporter…") { model.showExport = true }
+            Button(L("Exporter…", "Export…")) { model.showExport = true }
                 .keyboardShortcut("e", modifiers: [.command])
                 .disabled(model.scan.hosts.isEmpty)
         }
 
         CommandGroup(replacing: .pasteboard) {
-            Button("Copier l'adresse IP") { model.copySelectedIPs() }
+            Button(L("Copier l'adresse IP", "Copy IP Address")) { model.copySelectedIPs() }
                 .keyboardShortcut("c", modifiers: [.command])
                 .disabled(model.scan.selection.isEmpty)
-            Button("Tout sélectionner") { model.selectAll() }
+            Button(L("Tout sélectionner", "Select All")) { model.selectAll() }
                 .keyboardShortcut("a", modifiers: [.command])
             Divider()
-            Button("Rechercher") { model.searchFocusRequest += 1 }
+            Button(L("Rechercher", "Find")) { model.searchFocusRequest += 1 }
                 .keyboardShortcut("f", modifiers: [.command])
         }
 
-        CommandMenu("Appareil") {
-            Button("Nommer l'appareil…") { model.revealInspector(); model.labelFocusRequest += 1 }
+        CommandMenu(L("Appareil", "Device")) {
+            Button(L("Nommer l'appareil…", "Name Device…")) { model.revealInspector(); model.labelFocusRequest += 1 }
                 .keyboardShortcut(.return, modifiers: [])
                 .disabled(model.inspectedHost == nil)
-            Button("Actualiser") { model.refreshSelected() }
+            Button(L("Actualiser", "Refresh")) { model.refreshSelected() }
                 .keyboardShortcut("r", modifiers: [.command, .shift])
                 .disabled(model.scan.selection.isEmpty || model.scan.isScanning)
-            Button("Analyser les ports…") { model.beginPortScan() }
+            Button(L("Analyser les ports…", "Scan Ports…")) { model.beginPortScan() }
                 .keyboardShortcut("p", modifiers: [.command])
                 .disabled(model.scan.selection.isEmpty || model.scan.isScanning)
             Button("Wake-on-LAN") { model.wakeSelected() }
                 .keyboardShortcut("w", modifiers: [.command, .shift])
                 .disabled(!model.scan.selectedHosts.contains { $0.mac != nil })
             Divider()
-            Menu("Se connecter") {
+            Menu(L("Se connecter", "Connect")) {
                 ForEach(HostActions.Connection.allCases) { connection in
                     Button(connection.label) {
                         if let host = model.inspectedHost { HostActions.open(connection, ip: host.ip) }
@@ -89,26 +94,26 @@ struct SimpleScannerApp: App {
             }
             .disabled(model.inspectedHost == nil)
             Divider()
-            Button("Retirer de la liste") { model.deleteSelected() }
+            Button(L("Retirer de la liste", "Remove from List")) { model.deleteSelected() }
                 .keyboardShortcut(.delete, modifiers: [.command])
                 .disabled(model.scan.selection.isEmpty)
         }
 
         CommandGroup(after: .toolbar) {
-            Button(model.showSidebar ? "Masquer la barre latérale" : "Afficher la barre latérale") { model.showSidebar.toggle() }
+            Button(model.showSidebar ? L("Masquer la barre latérale", "Hide Sidebar") : L("Afficher la barre latérale", "Show Sidebar")) { model.showSidebar.toggle() }
                 .keyboardShortcut("s", modifiers: [.command, .option])
-            Button(model.showInspector ? "Masquer la fiche" : "Afficher la fiche") { model.toggleInspector() }
+            Button(model.showInspector ? L("Masquer la fiche", "Hide Inspector") : L("Afficher la fiche", "Show Inspector")) { model.toggleInspector() }
                 .keyboardShortcut("i", modifiers: [.command, .option])
-            Toggle("Afficher les adresses sans réponse", isOn: Binding(get: { model.showDeadHosts }, set: { model.showDeadHosts = $0 }))
+            Toggle(L("Afficher les adresses sans réponse", "Show Unresponsive Addresses"), isOn: Binding(get: { model.showDeadHosts }, set: { model.showDeadHosts = $0 }))
                 .keyboardShortcut("d", modifiers: [.command, .shift])
             Divider()
-            Menu("Profil de scan") {
+            Menu(L("Profil de scan", "Scan Profile")) {
                 ForEach(Array(ScanProfile.allCases.enumerated()), id: \.element) { index, profile in
                     Button((model.defaultProfile == profile ? "✓ " : "") + profile.label) { model.defaultProfile = profile }
                         .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: [.command])
                 }
             }
-            Picker("Rescan automatique", selection: Binding(get: { model.rescanInterval }, set: { model.rescanInterval = $0 })) {
+            Picker(L("Rescan automatique", "Auto-Rescan"), selection: Binding(get: { model.rescanInterval }, set: { model.rescanInterval = $0 })) {
                 ForEach(RescanInterval.allCases) { interval in
                     Text(interval.label).tag(interval)
                 }
@@ -116,11 +121,15 @@ struct SimpleScannerApp: App {
         }
 
         CommandGroup(replacing: .help) {
-            Button("Aide SimpleScanner") { model.showHelp = true }
+            Button(L("Aide SimpleScanner", "SimpleScanner Help")) { model.showHelp = true }
                 .keyboardShortcut("?", modifiers: [.command])
             Divider()
-            Button("Raccourcis clavier") { model.showShortcuts = true }
+            Button(L("Raccourcis clavier", "Keyboard Shortcuts")) { model.showShortcuts = true }
                 .keyboardShortcut("/", modifiers: [.command])
+            Divider()
+            Button(L("Site web Simple Apps (adrien-m.net/software)", "Simple Apps Website (adrien-m.net/software)")) {
+                NSWorkspace.shared.open(URL(string: "https://adrien-m.net/software")!)
+            }
         }
     }
 }
@@ -132,6 +141,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private var didStart = false
 
     func applicationWillFinishLaunching(_ notification: Notification) {
+        _ = Localization.current
         AppVersion.runIfRequested()
         let args = Array(CommandLine.arguments.dropFirst())
         if args.contains("--self-test") {
@@ -154,7 +164,18 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         guard !didStart else { return }
         didStart = true
         NSApp.appearance = NSAppearance(named: .darkAqua)
-        let files = CommandLine.arguments.dropFirst().filter { !$0.hasPrefix("-") }
+        let args = Array(CommandLine.arguments.dropFirst())
+        var files: [String] = []
+        var i = 0
+        while i < args.count {
+            let arg = args[i]
+            if arg == "--lang" || arg == "-AppleLanguage" || arg == "-AppleLanguages" || arg == "--view" {
+                i += 2
+                continue
+            }
+            if !arg.hasPrefix("-") { files.append(arg) }
+            i += 1
+        }
         if let first = files.first {
             let url = URL(fileURLWithPath: (first as NSString).expandingTildeInPath)
             if FileManager.default.fileExists(atPath: url.path) { model.open(url) }

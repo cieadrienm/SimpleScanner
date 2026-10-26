@@ -27,12 +27,12 @@ public enum ARPLookup {
             let ip = String(match.1)
             guard !ambiguous.contains(ip) else { continue }
             if let previous = result.entries[ip], previous != mac.canonical {
-                result.error = "La table ARP contient des entrées contradictoires entre interfaces ; adresses MAC indisponibles."
+                result.error = L("La table ARP contient des entrées contradictoires entre interfaces ; adresses MAC indisponibles.", "The ARP table has conflicting entries across interfaces; MAC addresses are unavailable.")
                 result.entries.removeValue(forKey: ip)
                 ambiguous.insert(ip)
             } else { result.entries[ip] = mac.canonical }
         }
-        if malformed > 0 { result.error = "Certaines entrées ARP n'ont pas pu être lues (\(malformed))." }
+        if malformed > 0 { result.error = L("Certaines entrées ARP n'ont pas pu être lues (\(malformed)).", "Some ARP entries could not be read (\(malformed)).") }
         return result
     }
 
@@ -44,7 +44,7 @@ public enum ARPLookup {
                     continuation.resume(returning: runner.run(executable: executable, arguments: arguments, timeout: timeout))
                 }
             }
-        } onCancel: { runner.cancel("Lecture de la table ARP annulée (cancelled).") }
+        } onCancel: { runner.cancel(L("Lecture de la table ARP annulée (cancelled).", "ARP table read cancelled.")) }
     }
 
     public static func table() async -> [String: String] { await read().entries }
@@ -71,16 +71,16 @@ public enum ARPLookup {
             lock.lock()
             if let failure { finished = true; lock.unlock(); return Result(error: failure) }
             do { try process.run() }
-            catch { finished = true; lock.unlock(); return Result(error: "Lecture de la table ARP impossible : \(error.localizedDescription)") }
+            catch { finished = true; lock.unlock(); return Result(error: L("Lecture de la table ARP impossible : \(error.localizedDescription)", "Could not read ARP table: \(error.localizedDescription)")) }
             lock.unlock()
-            let deadline = DispatchWorkItem { [weak self] in self?.cancel("Lecture de la table ARP trop longue (timed out).") }
+            let deadline = DispatchWorkItem { [weak self] in self?.cancel(L("Lecture de la table ARP trop longue (timed out).", "ARP table read timed out.")) }
             DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: deadline)
             let data = pipe.fileHandleForReading.readDataToEndOfFile()
             process.waitUntilExit()
             deadline.cancel()
             lock.lock(); finished = true; let error = failure; lock.unlock()
             if let error { return Result(error: error) }
-            guard process.terminationStatus == 0 else { return Result(error: "Lecture de la table ARP échouée (code \(process.terminationStatus)).") }
+            guard process.terminationStatus == 0 else { return Result(error: L("Lecture de la table ARP échouée (code \(process.terminationStatus)).", "ARP table read failed (code \(process.terminationStatus)).")) }
             return ARPLookup.parse(String(decoding: data, as: UTF8.self))
         }
     }

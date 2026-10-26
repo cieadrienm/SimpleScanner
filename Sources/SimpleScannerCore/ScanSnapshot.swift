@@ -82,7 +82,7 @@ public struct ScanSnapshot: Codable, Sendable {
             // so a non-IPv4 value is rejected at decode time, not sanitized later.
             guard IPv4.uint32(from: ip) != nil else {
                 throw DecodingError.dataCorruptedError(
-                    forKey: .ip, in: c, debugDescription: "\"\(ip)\" n'est pas une adresse IPv4 valide"
+                    forKey: .ip, in: c, debugDescription: L("\"\(ip)\" n'est pas une adresse IPv4 valide", "\"\(ip)\" is not a valid IPv4 address")
                 )
             }
             self.ip = ip

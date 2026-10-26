@@ -1,3 +1,4 @@
+import AppKit
 import SimpleScannerCore
 import SwiftUI
 
@@ -6,8 +7,8 @@ struct ExportSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("Exporter les résultats").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.text.swiftUI)
-            SectionHeader("Format")
+            Text(L("Exporter les résultats", "Export results")).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.text.swiftUI)
+            SectionHeader(L("Format", "Format"))
             VStack(spacing: 4) {
                 ForEach(AppModel.ExportFormat.allCases) { format in
                     let active = model.exportFormat == format
@@ -27,16 +28,16 @@ struct ExportSheet: View {
                     .buttonStyle(.plain)
                 }
             }
-            SectionHeader("Contenu")
+            SectionHeader(L("Contenu", "Scope"))
             HStack(spacing: 4) {
-                scopeButton("Lignes affichées (\(model.visibleHosts.count))", selected: model.exportVisibleOnly) { model.exportVisibleOnly = true }
-                scopeButton("Tous les appareils (\(model.scan.aliveCount))", selected: !model.exportVisibleOnly) { model.exportVisibleOnly = false }
+                scopeButton(L("Lignes affichées (\(model.visibleHosts.count))", "Visible rows (\(model.visibleHosts.count))"), selected: model.exportVisibleOnly) { model.exportVisibleOnly = true }
+                scopeButton(L("Tous les appareils (\(model.scan.aliveCount))", "All devices (\(model.scan.aliveCount))"), selected: !model.exportVisibleOnly) { model.exportVisibleOnly = false }
             }
             HStack {
-                Button("Annuler") { model.showExport = false }.keyboardShortcut(.cancelAction)
+                Button(L("Annuler", "Cancel")) { model.showExport = false }.keyboardShortcut(.cancelAction)
                 Spacer()
-                TextButton(title: "Copier", symbol: "doc.on.doc") { model.copyExport() }
-                TextButton(title: "Enregistrer…", symbol: "square.and.arrow.down", prominent: true) { model.saveExport() }
+                TextButton(title: L("Copier", "Copy"), symbol: "doc.on.doc") { model.copyExport() }
+                TextButton(title: L("Enregistrer…", "Save…"), symbol: "square.and.arrow.down", prominent: true) { model.saveExport() }
                     .keyboardShortcut(.defaultAction)
             }
         }
@@ -63,15 +64,15 @@ struct PortScanSheet: View {
     @State private var error: String?
 
     private var presets: [(String, String)] {
-        [("Courants", PortScanner.defaultPortsInput), ("Web", PortScanner.webPortsInput), ("1–1024", PortScanner.wideRangeInput)]
+        [(L("Courants", "Common"), PortScanner.defaultPortsInput), ("Web", PortScanner.webPortsInput), ("1–1024", PortScanner.wideRangeInput)]
     }
 
     var body: some View {
         let count = model.portScanTargets.count
         VStack(alignment: .leading, spacing: 16) {
-            Text("Analyser les ports").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.text.swiftUI)
-            Text(Format.count(count, "appareil") + " · connexions TCP directes, sans privilèges").font(.system(size: 11.5)).foregroundStyle(Theme.textDim.swiftUI)
-            SectionHeader("Ports")
+            Text(L("Analyser les ports", "Scan Ports")).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.text.swiftUI)
+            Text(Format.count(count, L("appareil", "device")) + L(" · connexions TCP directes, sans privilèges", " · direct unprivileged TCP connections")).font(.system(size: 11.5)).foregroundStyle(Theme.textDim.swiftUI)
+            SectionHeader(L("Ports", "Ports"))
             HStack(spacing: 4) {
                 ForEach(presets, id: \.0) { preset in
                     let active = model.portsInput == preset.1
@@ -89,17 +90,17 @@ struct PortScanSheet: View {
             if let error {
                 Text(error).font(.system(size: 11)).foregroundStyle(Theme.danger.swiftUI)
             } else if let ports = PortScanner.parsePorts(model.portsInput) {
-                Text("\(Format.count(ports.count, "port")) par appareil").font(.system(size: 11)).foregroundStyle(Theme.textFaint.swiftUI)
+                Text(L("\(Format.count(ports.count, "port")) par appareil", "\(Format.count(ports.count, "port")) per device")).font(.system(size: 11)).foregroundStyle(Theme.textFaint.swiftUI)
             }
             Toggle(isOn: $model.fetchBanners) {
-                Text("Lire les titres HTTP et bannières SSH").font(.system(size: 11.5)).foregroundStyle(Theme.text.swiftUI)
+                Text(L("Lire les titres HTTP et bannières SSH", "Read HTTP titles and SSH banners")).font(.system(size: 11.5)).foregroundStyle(Theme.text.swiftUI)
             }
             .toggleStyle(.checkbox)
             HStack {
-                Button("Annuler") { model.showPortScan = false }.keyboardShortcut(.cancelAction)
+                Button(L("Annuler", "Cancel")) { model.showPortScan = false }.keyboardShortcut(.cancelAction)
                 Spacer()
-                TextButton(title: "Lancer l'analyse", symbol: "scope", prominent: true, disabled: count == 0) {
-                    if !model.startPortScan() { error = "Liste invalide. Exemple : 22, 80, 443, 8000-8100" }
+                TextButton(title: L("Lancer l'analyse", "Start Scan"), symbol: "scope", prominent: true, disabled: count == 0) {
+                    if !model.startPortScan() { error = L("Liste invalide. Exemple : 22, 80, 443, 8000-8100", "Invalid list. Example: 22, 80, 443, 8000-8100") }
                 }
                 .keyboardShortcut(.defaultAction)
             }
@@ -116,33 +117,56 @@ struct PreferencesView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            SectionHeader("Scan")
-            FieldRow("Profil par défaut", width: 130) {
+            SectionHeader(L("Scan", "Scan"))
+            FieldRow(L("Profil par défaut", "Default profile"), width: 130) {
                 Picker("", selection: $model.defaultProfile) {
                     ForEach(ScanProfile.allCases) { Text($0.label).tag($0) }
                 }
                 .labelsHidden().frame(width: 160)
             }
             Text(model.defaultProfile.description).font(.system(size: 10.5)).foregroundStyle(Theme.textFaint.swiftUI).padding(.leading, 138)
-            FieldRow("Rescan automatique", width: 130) {
+            FieldRow(L("Rescan automatique", "Auto-rescan"), width: 130) {
                 Picker("", selection: $model.rescanInterval) {
                     ForEach(RescanInterval.allCases) { Text($0.label).tag($0) }
                 }
                 .labelsHidden().frame(width: 160)
             }
             Divider().overlay(Theme.separator.swiftUI)
-            SectionHeader("Affichage")
-            Toggle("Afficher les adresses sans réponse", isOn: $model.showDeadHosts).font(.system(size: 11.5)).foregroundStyle(Theme.text.swiftUI)
-            Toggle("Barre latérale", isOn: $model.showSidebar).font(.system(size: 11.5)).foregroundStyle(Theme.text.swiftUI)
-            Toggle("Fiche de l'appareil", isOn: $model.showInspector).font(.system(size: 11.5)).foregroundStyle(Theme.text.swiftUI)
+            SectionHeader(L("Affichage", "Display"))
+            FieldRow(L("Langue", "Language"), width: 130) {
+                Picker("", selection: $model.language) {
+                    ForEach(AppLanguage.allCases) { Text($0.label).tag($0) }
+                }
+                .labelsHidden().frame(width: 160)
+            }
+            Toggle(L("Afficher les adresses sans réponse", "Show non-responding addresses"), isOn: $model.showDeadHosts).font(.system(size: 11.5)).foregroundStyle(Theme.text.swiftUI)
+            Toggle(L("Barre latérale", "Sidebar"), isOn: $model.showSidebar).font(.system(size: 11.5)).foregroundStyle(Theme.text.swiftUI)
+            Toggle(L("Fiche de l'appareil", "Device Inspector"), isOn: $model.showInspector).font(.system(size: 11.5)).foregroundStyle(Theme.text.swiftUI)
             Divider().overlay(Theme.separator.swiftUI)
-            SectionHeader("Confidentialité")
-            Text("SimpleScanner n'envoie rien hors de votre réseau : pas de télémétrie, pas de compte, pas de mise à jour automatique. La base des fabricants (registre IEEE) est embarquée.")
+            SectionHeader(L("Mises à jour", "Updates"))
+            HStack(alignment: .center, spacing: 12) {
+                Toggle(L("Vérifier les mises à jour au lancement", "Check for updates on launch"), isOn: Binding(
+                    get: { model.updater.autoCheckOnLaunch },
+                    set: { model.updater.autoCheckOnLaunch = $0 }
+                ))
+                .font(.system(size: 11.5)).foregroundStyle(Theme.text.swiftUI)
+                Spacer()
+                TextButton(title: L("Vérifier maintenant…", "Check Now…"), symbol: "arrow.triangle.2.circlepath", compact: true) {
+                    model.showUpdater = true
+                    model.updater.checkForUpdates(silent: false)
+                }
+            }
+            Divider().overlay(Theme.separator.swiftUI)
+            SectionHeader(L("Confidentialité", "Privacy"))
+            Text(L(
+                "SimpleScanner n'envoie aucune donnée du réseau : pas de télémétrie, pas de compte. La base des fabricants (registre IEEE) est embarquée.",
+                "SimpleScanner never sends your network data: no telemetry, no account. The vendor database (IEEE registry) is bundled offline."
+            ))
                 .font(.system(size: 11)).foregroundStyle(Theme.textDim.swiftUI).fixedSize(horizontal: false, vertical: true)
             Spacer(minLength: 0)
         }
         .padding(20)
-        .frame(width: 420, height: 360)
+        .frame(width: 440, height: 460)
         .background(Theme.panel.swiftUI)
         .preferredColorScheme(.dark)
     }
@@ -151,47 +175,49 @@ struct PreferencesView: View {
 struct ShortcutsSheet: View {
     let close: () -> Void
 
-    static let groups: [(String, [(String, String)])] = [
-        ("Scan", [
-            ("⌘R", "Scanner le réseau"),
-            ("⏎ (plage)", "Lancer le scan depuis le champ de plage"),
-            ("⌘.", "Arrêter le scan"),
-            ("⌘1 / ⌘2 / ⌘3", "Profil Rapide / Standard / Approfondi (menu Présentation)"),
-            ("⌘I", "Importer une liste de cibles"),
-            ("⌘O", "Ouvrir un scan enregistré"),
-            ("⌘S", "Enregistrer le scan"),
-            ("⇧⌘O", "Comparer à un scan enregistré"),
-            ("⌘E", "Exporter (CSV, JSON, IP:port, texte)"),
-        ]),
-        ("Appareils", [
-            ("↑ / ↓", "Parcourir la liste"),
-            ("⇧-clic, ⌘-clic", "Sélection multiple"),
-            ("Double-clic", "Ouvrir la fiche de l'appareil"),
-            ("⏎", "Nommer l'appareil sélectionné"),
-            ("⌘C", "Copier la ou les adresses IP"),
-            ("⌘A", "Tout sélectionner"),
-            ("⇧⌘R", "Actualiser la sélection"),
-            ("⌘P", "Analyser les ports de la sélection"),
-            ("⇧⌘W", "Wake-on-LAN"),
-            ("⌘⌫", "Retirer de la liste"),
-            ("Clic droit", "Se connecter : HTTP, SSH, SMB, VNC, RDP…"),
-        ]),
-        ("Fenêtre", [
-            ("⌘F", "Rechercher (adresse, nom, fabricant, MAC, service)"),
-            ("⎋", "Effacer la recherche"),
-            ("⌥⌘S", "Barre latérale : réseaux, favoris, Bonjour, filtres"),
-            ("⌥⌘I", "Fiche de l'appareil"),
-            ("⇧⌘D", "Afficher les adresses sans réponse"),
-            ("Clic en-tête", "Trier par cette colonne"),
-            ("⌘,", "Préférences"),
-            ("⌘? / ⌘/", "Aide / cette liste"),
-        ]),
-    ]
+    static var groups: [(String, [(String, String)])] {
+        [
+            (L("Scan", "Scan"), [
+                ("⌘R", L("Scanner le réseau", "Scan network")),
+                (L("⏎ (plage)", "⏎ (range)"), L("Lancer le scan depuis le champ de plage", "Start scan from the range field")),
+                ("⌘.", L("Arrêter le scan", "Stop scan")),
+                ("⌘1 / ⌘2 / ⌘3", L("Profil Rapide / Standard / Approfondi (menu Présentation)", "Fast / Standard / Deep profile (View menu)")),
+                ("⌘I", L("Importer une liste de cibles", "Import target list")),
+                ("⌘O", L("Ouvrir un scan enregistré", "Open saved scan")),
+                ("⌘S", L("Enregistrer le scan", "Save scan")),
+                ("⇧⌘O", L("Comparer à un scan enregistré", "Compare with saved scan")),
+                ("⌘E", L("Exporter (CSV, JSON, IP:port, texte)", "Export (CSV, JSON, IP:port, text)")),
+            ]),
+            (L("Appareils", "Devices"), [
+                ("↑ / ↓", L("Parcourir la liste", "Navigate list")),
+                (L("⇧-clic, ⌘-clic", "⇧-click, ⌘-click"), L("Sélection multiple", "Multi-select")),
+                (L("Double-clic", "Double-click"), L("Ouvrir la fiche de l'appareil", "Open device inspector")),
+                ("⏎", L("Nommer l'appareil sélectionné", "Label selected device")),
+                ("⌘C", L("Copier la ou les adresses IP", "Copy IP address(es)")),
+                ("⌘A", L("Tout sélectionner", "Select all")),
+                ("⇧⌘R", L("Actualiser la sélection", "Refresh selection")),
+                ("⌘P", L("Analyser les ports de la sélection", "Scan ports on selection")),
+                ("⇧⌘W", L("Wake-on-LAN", "Wake-on-LAN")),
+                ("⌘⌫", L("Retirer de la liste", "Remove from list")),
+                (L("Clic droit", "Right-click"), L("Se connecter : HTTP, SSH, SMB, VNC, RDP…", "Connect: HTTP, SSH, SMB, VNC, RDP…")),
+            ]),
+            (L("Fenêtre", "Window"), [
+                ("⌘F", L("Rechercher (adresse, nom, fabricant, MAC, service)", "Search (IP, name, vendor, MAC, service)")),
+                ("⎋", L("Effacer la recherche", "Clear search")),
+                ("⌥⌘S", L("Barre latérale : réseaux, favoris, Bonjour, filtres", "Sidebar: networks, favorites, Bonjour, filters")),
+                ("⌥⌘I", L("Fiche de l'appareil", "Device inspector")),
+                ("⇧⌘D", L("Afficher les adresses sans réponse", "Show non-responding addresses")),
+                (L("Clic en-tête", "Header click"), L("Trier par cette colonne", "Sort by column")),
+                ("⌘,", L("Préférences", "Preferences")),
+                ("⌘? / ⌘/", L("Aide / cette liste", "Help / this list")),
+            ]),
+        ]
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(alignment: .firstTextBaseline) {
-                Text("Raccourcis clavier").font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.text.swiftUI)
+                Text(L("Raccourcis clavier", "Keyboard Shortcuts")).font(.system(size: 15, weight: .semibold)).foregroundStyle(Theme.text.swiftUI)
                 Spacer()
                 Text(AppVersion.current.shortLabel).font(.system(size: 11).monospacedDigit()).foregroundStyle(Theme.textFaint.swiftUI)
             }
@@ -209,9 +235,12 @@ struct ShortcutsSheet: View {
                     .frame(width: 262, alignment: .topLeading)
                 }
             }
-            Text("Astuce : un nom qui contient #scène ou #régie se retrouve avec la recherche, et le filtre « Appareils nommés » ne montre que les appareils étiquetés.")
+            Text(L(
+                "Astuce : un nom qui contient #scène ou #régie se retrouve avec la recherche, et le filtre « Appareils nommés » ne montre que les appareils étiquetés.",
+                "Tip: a label containing #stage or #booth is searchable, and the “Labeled devices” filter shows only tagged devices."
+            ))
                 .font(.system(size: 11)).foregroundStyle(Theme.textFaint.swiftUI)
-            HStack { Spacer(); Button("OK", action: close).keyboardShortcut(.defaultAction) }
+            HStack { Spacer(); Button(L("OK", "OK"), action: close).keyboardShortcut(.defaultAction) }
         }
         .padding(22)
         .background(Theme.panel.swiftUI)
@@ -233,12 +262,46 @@ struct AboutSheet: View {
         let detail: String
     }
 
-    private static let features: [Feature] = [
-        Feature(icon: "dot.radiowaves.left.and.right", tint: Theme.accent, title: "Découverte en un souffle", detail: "Un socket ICMP, une rafale espacée, la table ARP du noyau comme juge : un /24 en une à deux secondes, sans privilèges."),
-        Feature(icon: "person.text.rectangle", tint: Theme.bonjour, title: "Qui est qui", detail: "Nom DNS, NetBIOS, Bonjour et modèle matériel, fabricant par le registre IEEE embarqué, type d'appareil estimé avec ses indices."),
-        Feature(icon: "scope", tint: Theme.tcp, title: "Ports, bannières, ping", detail: "Analyse TCP par préréglages, titres HTTP et bannières SSH, ping en direct avec sparkline, connexions en un clic."),
-        Feature(icon: "clock.arrow.2.circlepath", tint: Theme.alive, title: "Mémoire du réseau", detail: "Noms persistants par adresse MAC, favoris, scans enregistrés et comparés (+ nouveaux, ~ modifiés, − disparus), exports CSV/JSON/texte."),
-    ]
+    private static var features: [Feature] {
+        [
+            Feature(
+                icon: "dot.radiowaves.left.and.right",
+                tint: Theme.accent,
+                title: L("Découverte en un souffle", "Discovery in a breath"),
+                detail: L(
+                    "Un socket ICMP, une rafale espacée, la table ARP du noyau comme juge : un /24 en une à deux secondes, sans privilèges.",
+                    "One ICMP socket, a paced sweep, the kernel ARP table as arbiter: a /24 in one to two seconds, without privileges."
+                )
+            ),
+            Feature(
+                icon: "person.text.rectangle",
+                tint: Theme.bonjour,
+                title: L("Qui est qui", "Who is who"),
+                detail: L(
+                    "Nom DNS, NetBIOS, Bonjour et modèle matériel, fabricant par le registre IEEE embarqué, type d'appareil estimé avec ses indices.",
+                    "DNS, NetBIOS, Bonjour name and hardware model, vendor from the bundled IEEE registry, estimated device type with clues."
+                )
+            ),
+            Feature(
+                icon: "scope",
+                tint: Theme.tcp,
+                title: L("Ports, bannières, ping", "Ports, banners, ping"),
+                detail: L(
+                    "Analyse TCP par préréglages, titres HTTP et bannières SSH, ping en direct avec sparkline, connexions en un clic.",
+                    "Preset TCP port scans, HTTP titles and SSH banners, live ping with sparkline, one-click connections."
+                )
+            ),
+            Feature(
+                icon: "clock.arrow.2.circlepath",
+                tint: Theme.alive,
+                title: L("Mémoire du réseau", "Network memory"),
+                detail: L(
+                    "Noms persistants par adresse MAC, favoris, scans enregistrés et comparés (+ nouveaux, ~ modifiés, − disparus), exports CSV/JSON/texte.",
+                    "Persistent labels by MAC address, favorites, saved and compared scans (+ new, ~ changed, − gone), CSV/JSON/text exports."
+                )
+            ),
+        ]
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
@@ -249,12 +312,15 @@ struct AboutSheet: View {
                         Text("SimpleScanner").font(.system(size: 22, weight: .semibold)).foregroundStyle(Theme.text.swiftUI)
                         versionBadge
                     }
-                    Text("Scanner réseau natif, ultra-léger et rapide pour macOS — dans la lignée de SimpleAudio et SimpleRecorder")
+                    Text(L(
+                        "Scanner réseau natif, ultra-léger et rapide pour macOS — dans la lignée de SimpleAudio et SimpleRecorder",
+                        "Fast, ultra-lightweight native network scanner for macOS — in the spirit of SimpleAudio and SimpleRecorder"
+                    ))
                         .font(.system(size: 12.5, weight: .medium)).foregroundStyle(Theme.textDim.swiftUI)
                     HStack(spacing: 8) {
-                        pill(icon: "bolt.fill", text: ICMPPinger.shared != nil ? "ICMP natif" : "ICMP indisponible", tint: ICMPPinger.shared != nil ? Theme.alive : Theme.textFaint)
-                        pill(icon: "antenna.radiowaves.left.and.right", text: model.mdns.isRunning ? "Bonjour à l'écoute" : "Bonjour arrêté", tint: model.mdns.isRunning ? Theme.bonjour : Theme.textFaint)
-                        pill(icon: "building.2", text: OUILookup.shared.isAvailable ? "\(OUILookup.shared.entryCount / 1000) k fabricants" : "registre absent", tint: Theme.accent)
+                        pill(icon: "bolt.fill", text: ICMPPinger.shared != nil ? L("ICMP natif", "Native ICMP") : L("ICMP indisponible", "ICMP unavailable"), tint: ICMPPinger.shared != nil ? Theme.alive : Theme.textFaint)
+                        pill(icon: "antenna.radiowaves.left.and.right", text: model.mdns.isRunning ? L("Bonjour à l'écoute", "Bonjour listening") : L("Bonjour arrêté", "Bonjour stopped"), tint: model.mdns.isRunning ? Theme.bonjour : Theme.textFaint)
+                        pill(icon: "building.2", text: OUILookup.shared.isAvailable ? L("\(OUILookup.shared.entryCount / 1000) k fabricants", "\(OUILookup.shared.entryCount / 1000)k vendors") : L("registre absent", "registry missing"), tint: Theme.accent)
                     }
                     .padding(.top, 3)
                 }
@@ -262,7 +328,7 @@ struct AboutSheet: View {
             }
             Rectangle().fill(Theme.separator.swiftUI).frame(height: 1)
             VStack(alignment: .leading, spacing: 8) {
-                Text("CE QU'IL FAIT").font(.system(size: 10, weight: .semibold)).kerning(0.8).foregroundStyle(Theme.textFaint.swiftUI)
+                Text(L("CE QU'IL FAIT", "WHAT IT DOES")).font(.system(size: 10, weight: .semibold)).kerning(0.8).foregroundStyle(Theme.textFaint.swiftUI)
                 LazyVGrid(columns: [GridItem(.flexible(), spacing: 10), GridItem(.flexible(), spacing: 10)], spacing: 10) {
                     ForEach(Self.features) { item in
                         HStack(alignment: .top, spacing: 10) {
@@ -282,14 +348,75 @@ struct AboutSheet: View {
             Rectangle().fill(Theme.separator.swiftUI).frame(height: 1)
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Adrien Mondot · cie Adrien M").font(.system(size: 11.5, weight: .medium)).foregroundStyle(Theme.text.swiftUI)
-                    Text("Licence GPL v3+. Issu d'iPScanner de Canberk Kılıçarslan (licence MIT). Registre des fabricants : IEEE Standards Association. Aucune télémétrie.")
+                    HStack(alignment: .firstTextBaseline, spacing: 10) {
+                        Button {
+                            NSWorkspace.shared.open(URL(string: "https://adrien-m.net")!)
+                        } label: {
+                            HStack(spacing: 4) {
+                                Text("Adrien Mondot · cie Adrien M — adrien-m.net")
+                                Image(systemName: "arrow.up.right.square")
+                                    .font(.system(size: 10))
+                            }
+                            .font(.system(size: 11.5, weight: .medium))
+                            .foregroundStyle(Theme.text.swiftUI)
+                        }
+                        .buttonStyle(.plain)
+                        .onHover { inside in
+                            if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                        }
+                        .help("https://adrien-m.net")
+
+                        Text("·").font(.system(size: 11)).foregroundStyle(Theme.textFaint.swiftUI)
+
+                        Button {
+                            NSWorkspace.shared.open(URL(string: "https://adrien-m.net/software")!)
+                        } label: {
+                            HStack(spacing: 3) {
+                                Image(systemName: "globe")
+                                    .font(.system(size: 10))
+                                Text("Simple Apps")
+                            }
+                            .font(.system(size: 11, weight: .medium))
+                            .foregroundStyle(Theme.accent.swiftUI)
+                        }
+                        .buttonStyle(.plain)
+                        .onHover { inside in
+                            if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+                        }
+                        .help("https://adrien-m.net/software")
+                    }
+                    Text(L(
+                        "Licence GPL v3+. Issu d'iPScanner de Canberk Kılıçarslan (licence MIT). Registre des fabricants : IEEE Standards Association. Aucune télémétrie.",
+                        "GPL v3+ license. Derived from iPScanner by Canberk Kılıçarslan (MIT license). Vendor registry: IEEE Standards Association. Zero telemetry."
+                    ))
                         .font(.system(size: 10.5)).foregroundStyle(Theme.textFaint.swiftUI).fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
-                Button { close(); openHelp() } label: { Label("Guide (⌘?)", systemImage: "book.closed").font(.system(size: 11.5)) }
+                Button {
+                    close()
+                    DispatchQueue.main.async {
+                        model.showUpdater = true
+                        if case .updateAvailable = model.updater.state {
+                            // Keep available release ready to install
+                        } else {
+                            model.updater.checkForUpdates(silent: false)
+                        }
+                    }
+                } label: {
+                    if case .updateAvailable(let rel) = model.updater.state {
+                        Label(L("↑ Mise à jour v\(rel.version)", "↑ Update v\(rel.version)"), systemImage: "arrow.down.circle.fill")
+                            .font(.system(size: 11.5, weight: .semibold))
+                            .foregroundStyle(Theme.accent.swiftUI)
+                    } else {
+                        Label(L("Mises à jour…", "Check for Updates…"), systemImage: "arrow.triangle.2.circlepath")
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(Theme.textDim.swiftUI)
+                    }
+                }
+                .buttonStyle(.plain)
+                Button { close(); openHelp() } label: { Label(L("Guide (⌘?)", "Guide (⌘?)"), systemImage: "book.closed").font(.system(size: 11.5)) }
                     .buttonStyle(.plain).foregroundStyle(Theme.textDim.swiftUI)
-                Button("OK", action: close).keyboardShortcut(.defaultAction)
+                Button(L("OK", "OK"), action: close).keyboardShortcut(.defaultAction)
             }
         }
         .padding(22)
@@ -314,14 +441,14 @@ struct AboutSheet: View {
             withAnimation { copiedVersion = true }
             Task { @MainActor in try? await Task.sleep(for: .seconds(1.5)); withAnimation { copiedVersion = false } }
         } label: {
-            Text(copiedVersion ? "copié" : AppVersion.current.shortLabel)
+            Text(copiedVersion ? L("copié", "copied") : AppVersion.current.shortLabel)
                 .font(.system(size: 11, weight: .semibold, design: .monospaced))
                 .foregroundStyle(Theme.background.swiftUI)
                 .padding(.horizontal, 7).padding(.vertical, 2)
                 .background(Capsule().fill(Theme.accent.swiftUI))
         }
         .buttonStyle(.plain)
-        .help("Copier la version")
+        .help(L("Copier la version", "Copy version"))
     }
 
     private func pill(icon: String, text: String, tint: NSColor) -> some View {
@@ -332,5 +459,217 @@ struct AboutSheet: View {
         .foregroundStyle(tint.swiftUI)
         .padding(.horizontal, 7).padding(.vertical, 3)
         .background(Capsule().fill(tint.swiftUI.opacity(0.12)))
+    }
+}
+
+struct UpdateSheet: View {
+    @Bindable var model: AppModel
+    let close: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(alignment: .center, spacing: 14) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12)
+                        .fill(LinearGradient(colors: [Color(nsColor: NSColor(hex: 0x222731)), Color(nsColor: NSColor(hex: 0x0E1014))], startPoint: .top, endPoint: .bottom))
+                        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.white.opacity(0.08)))
+                    RadarView(active: isWorking, size: 36)
+                }
+                .frame(width: 48, height: 48)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(L("Mises à jour de SimpleScanner", "SimpleScanner Updates"))
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(Theme.text.swiftUI)
+                    Text(L("Version installée : \(AppVersion.current.shortLabel)", "Installed version: \(AppVersion.current.shortLabel)"))
+                        .font(.system(size: 11.5, design: .monospaced))
+                        .foregroundStyle(Theme.textDim.swiftUI)
+                }
+                Spacer()
+            }
+
+            Rectangle().fill(Theme.separator.swiftUI).frame(height: 1)
+
+            statusContent
+
+            Rectangle().fill(Theme.separator.swiftUI).frame(height: 1)
+
+            HStack {
+                Toggle(L("Vérifier automatiquement au lancement", "Automatically check on launch"), isOn: Binding(
+                    get: { model.updater.autoCheckOnLaunch },
+                    set: { model.updater.autoCheckOnLaunch = $0 }
+                ))
+                .font(.system(size: 11))
+                .foregroundStyle(Theme.textDim.swiftUI)
+                .toggleStyle(.checkbox)
+
+                Spacer()
+
+                actionButtons
+            }
+        }
+        .padding(20)
+        .frame(width: 480)
+        .background(Theme.panel.swiftUI)
+        .preferredColorScheme(.dark)
+    }
+
+    private var isWorking: Bool {
+        switch model.updater.state {
+        case .checking, .downloading, .installing:
+            return true
+        default:
+            return false
+        }
+    }
+
+    @ViewBuilder
+    private var statusContent: some View {
+        switch model.updater.state {
+        case .idle:
+            HStack(spacing: 10) {
+                Image(systemName: "arrow.triangle.2.circlepath")
+                    .font(.system(size: 14))
+                    .foregroundStyle(Theme.textDim.swiftUI)
+                Text(L("Prêt à vérifier la disponibilité d'une mise à jour.", "Ready to check for available updates."))
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.textDim.swiftUI)
+            }
+            .padding(.vertical, 8)
+
+        case .checking:
+            HStack(spacing: 10) {
+                ProgressView().controlSize(.small)
+                Text(L("Recherche de mises à jour en cours…", "Checking for updates…"))
+                    .font(.system(size: 12))
+                    .foregroundStyle(Theme.text.swiftUI)
+            }
+            .padding(.vertical, 8)
+
+        case .upToDate(let version):
+            HStack(spacing: 10) {
+                Image(systemName: "checkmark.circle.fill")
+                    .font(.system(size: 16))
+                    .foregroundStyle(Theme.alive.swiftUI)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text(L("SimpleScanner est à jour (v\(version)).", "SimpleScanner is up to date (v\(version))."))
+                        .font(.system(size: 12.5, weight: .semibold))
+                        .foregroundStyle(Theme.text.swiftUI)
+                    Text(L("Cette version est à jour.", "This version is up to date."))
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.textDim.swiftUI)
+                }
+            }
+            .padding(.vertical, 8)
+
+        case .updateAvailable(let rel):
+            VStack(alignment: .leading, spacing: 10) {
+                HStack(alignment: .firstTextBaseline, spacing: 8) {
+                    Image(systemName: "arrow.down.circle.fill")
+                        .font(.system(size: 14))
+                        .foregroundStyle(Theme.accent.swiftUI)
+                    Text(L("Nouvelle version disponible : v\(rel.version)", "New version available: v\(rel.version)"))
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(Theme.text.swiftUI)
+                    if let build = rel.build {
+                        Text("(\(build))")
+                            .font(.system(size: 11, design: .monospaced))
+                            .foregroundStyle(Theme.textFaint.swiftUI)
+                    }
+                }
+
+                if !rel.notes.isEmpty {
+                    SectionHeader(L("Notes de version", "Release Notes"))
+                    ScrollView {
+                        Text(rel.notes)
+                            .font(.system(size: 11.5))
+                            .foregroundStyle(Theme.textDim.swiftUI)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .textSelection(.enabled)
+                    }
+                    .frame(minHeight: 80, maxHeight: 160)
+                    .padding(10)
+                    .background(RoundedRectangle(cornerRadius: 6).fill(Color.white.opacity(0.04)))
+                }
+            }
+
+        case .downloading(let progress):
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    ProgressView().controlSize(.small)
+                    Text(L("Téléchargement de la mise à jour…", "Downloading update…"))
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Theme.text.swiftUI)
+                    Spacer()
+                    Text("\(Int((progress * 100).rounded()))%")
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(Theme.textDim.swiftUI)
+                }
+                ProgressView(value: min(max(progress, 0), 1))
+                    .tint(Theme.accent.swiftUI)
+            }
+            .padding(.vertical, 6)
+
+        case .installing:
+            HStack(spacing: 10) {
+                ProgressView().controlSize(.small)
+                Text(L("Vérification de la signature et installation…", "Verifying signature and installing…"))
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Theme.text.swiftUI)
+            }
+            .padding(.vertical, 8)
+
+        case .failed(let message):
+            HStack(alignment: .top, spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .font(.system(size: 15))
+                    .foregroundStyle(Theme.danger.swiftUI)
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(L("Échec de la vérification ou de la mise à jour", "Update check or installation failed"))
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(Theme.text.swiftUI)
+                    Text(message)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.textDim.swiftUI)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            .padding(.vertical, 6)
+        }
+    }
+
+    @ViewBuilder
+    private var actionButtons: some View {
+        switch model.updater.state {
+        case .updateAvailable(let rel):
+            Button(L("Plus tard", "Later"), action: close)
+                .keyboardShortcut(.cancelAction)
+            TextButton(title: L("Mettre à jour et relancer", "Update & Relaunch"), symbol: "arrow.down.circle.fill", prominent: true) {
+                model.updater.downloadAndInstall(rel)
+            }
+            .keyboardShortcut(.defaultAction)
+
+        case .downloading, .installing:
+            Button(L("Fermer", "Close"), action: close)
+                .disabled(true)
+
+        case .failed:
+            Button(L("Fermer", "Close"), action: close)
+                .keyboardShortcut(.cancelAction)
+            TextButton(title: L("Réessayer", "Retry"), symbol: "arrow.clockwise", prominent: true) {
+                model.updater.checkForUpdates(silent: false)
+            }
+
+        case .idle, .upToDate:
+            TextButton(title: L("Vérifier à nouveau", "Check Again"), symbol: "arrow.triangle.2.circlepath", compact: true) {
+                model.updater.checkForUpdates(silent: false)
+            }
+            Button(L("OK", "OK"), action: close)
+                .keyboardShortcut(.defaultAction)
+
+        case .checking:
+            Button(L("Fermer", "Close"), action: close)
+                .keyboardShortcut(.cancelAction)
+        }
     }
 }

@@ -113,6 +113,12 @@ enum SelfTest {
         try check(model.scan.diff?.newCount == 1, "Comparaison chargée")
         let png = Snapshot.renderOffscreenPNG(model: model)
         try check((png?.count ?? 0) > 20_000, "Rendu de la fenêtre")
-        try check(model.statusMessage.contains("12 appareils"), "Message d'état : \(model.statusMessage)")
+        try check(model.statusMessage.contains("12 appareils") || model.statusMessage.contains("12 devices"), "Message d'état : \(model.statusMessage)")
+        let previousLang = Localization.current
+        defer { Localization.set(previousLang, persist: false) }
+        Localization.set(.en, persist: false)
+        try check(L("Français", "English") == "English" && model.statusMessage.contains("12 devices"), "Localisation EN : \(model.statusMessage)")
+        Localization.set(.fr, persist: false)
+        try check(L("Français", "English") == "Français" && model.statusMessage.contains("12 appareils"), "Localisation FR : \(model.statusMessage)")
     }
 }

@@ -150,6 +150,18 @@ final class MDNSDiscovery {
         monitor?.cancel(); monitor = nil; networkFingerprint = nil
     }
 
+    /// Translates known Bonjour service family labels into the active UI language.
+    nonisolated static func displayService(_ raw: String) -> String {
+        switch raw {
+        case "Partage d'écran", "Screen Sharing": return L("Partage d'écran", "Screen Sharing")
+        case "Poste de travail", "Workstation": return L("Poste de travail", "Workstation")
+        case "Imprimante", "Printer": return L("Imprimante", "Printer")
+        case "Impression", "Printing": return L("Impression", "Printing")
+        case "Infos appareil", "Device info": return L("Infos appareil", "Device info")
+        default: return raw
+        }
+    }
+
     func services(for ip: String) -> [ServiceRecord] {
         Array(servicesByIP[ip] ?? []).sorted { ($0.displayType, $0.name) < ($1.displayType, $1.name) }
     }
@@ -158,7 +170,7 @@ final class MDNSDiscovery {
     func info(for host: Host) -> DeviceInfo {
         let records = services(for: host.ip)
         var info = DeviceInfo()
-        info.services = Array(Set(records.map(\.displayType)).subtracting(["Infos appareil"])).sorted()
+        info.services = Array(Set(records.map(\.displayType)).subtracting(["Infos appareil", "Device info"])).sorted()
         let names = Self.names(from: records)
         info.names = names
         info.model = records.compactMap(\.model).first ?? deviceInfoModel(for: host, names: names)
@@ -169,9 +181,11 @@ final class MDNSDiscovery {
     var serviceCatalog: [(type: String, count: Int)] {
         var counts: [String: Set<String>] = [:]
         for (ip, records) in servicesByIP {
-            for record in records where record.displayType != "Infos appareil" { counts[record.displayType, default: []].insert(ip) }
+            for record in records where record.displayType != "Infos appareil" && record.displayType != "Device info" {
+                counts[record.displayType, default: []].insert(ip)
+            }
         }
-        return counts.map { (type: $0.key, count: $0.value.count) }.sorted { $0.type < $1.type }
+        return counts.map { (type: $0.key, count: $0.value.count) }.sorted { Self.displayService($0.type) < Self.displayService($1.type) }
     }
 
     private func deviceInfoModel(for host: Host, names: [String]) -> String? {

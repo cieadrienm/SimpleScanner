@@ -35,7 +35,7 @@ final class DiscoveryRegressionTests: XCTestCase {
         controller.filterHasVendor = true
         XCTAssertTrue(controller.filteredHosts.isEmpty)
         XCTAssertFalse(controller.showsDiscoveryEmptyState)
-        XCTAssertEqual(controller.activeFilterNames, ["Fabricant connu"])
+        XCTAssertEqual(controller.activeFilterNames, [L("Fabricant connu", "Known vendor")])
         controller.clearScopeFilters()
         XCTAssertEqual(controller.filteredHosts.map(\.ip), ["127.0.0.1"])
         XCTAssertFalse(controller.showDeadHosts)

@@ -9,17 +9,17 @@ public enum ScanProfile: String, CaseIterable, Identifiable, Sendable {
 
     public var label: String {
         switch self {
-        case .quick: "Rapide"
-        case .standard: "Standard"
-        case .deep: "Approfondi"
+        case .quick: L("Rapide", "Fast")
+        case .standard: L("Standard", "Standard")
+        case .deep: L("Approfondi", "Deep")
         }
     }
 
     public var description: String {
         switch self {
-        case .quick: "Ping ICMP et table ARP : le plus rapide."
-        case .standard: "Ping, ARP, NetBIOS et repli TCP pour les hôtes qui bloquent le ping."
-        case .deep: "Standard, puis analyse des ports courants et lecture des bannières."
+        case .quick: L("Ping ICMP et table ARP : le plus rapide.", "ICMP ping and ARP table: the fastest.")
+        case .standard: L("Ping, ARP, NetBIOS et repli TCP pour les hôtes qui bloquent le ping.", "Ping, ARP, NetBIOS, and TCP fallback for hosts blocking ping.")
+        case .deep: L("Standard, puis analyse des ports courants et lecture des bannières.", "Standard, plus common port scan and banner grabbing.")
         }
     }
 

@@ -21,7 +21,7 @@ public enum RescanInterval: String, CaseIterable, Identifiable, Sendable {
 
     public var label: String {
         switch self {
-        case .off: "Désactivé"
+        case .off: L("Désactivé", "Off")
         case .s30: "30 s"
         case .m1: "1 min"
         case .m5: "5 min"
@@ -31,8 +31,8 @@ public enum RescanInterval: String, CaseIterable, Identifiable, Sendable {
 
     public var menuLabel: String {
         switch self {
-        case .off: "Rescan automatique désactivé"
-        default: "Rescan toutes les \(label)"
+        case .off: L("Rescan automatique désactivé", "Auto-rescan off")
+        default: L("Rescan toutes les \(label)", "Rescan every \(label)")
         }
     }
 }

@@ -19,8 +19,8 @@ final class AppModel {
             switch self {
             case .csv: "CSV"
             case .json: "JSON"
-            case .ipPort: "Liste IP:port"
-            case .text: "Rapport texte"
+            case .ipPort: L("Liste IP:port", "IP:port list")
+            case .text: L("Rapport texte", "Text report")
             }
         }
         var fileExtension: String {
@@ -32,10 +32,10 @@ final class AppModel {
         }
         var detail: String {
             switch self {
-            case .csv: "Une ligne par appareil : IP, nom, MAC, fabricant, latence, ports, état."
-            case .json: "Les mêmes champs, structurés, pour vos scripts."
-            case .ipPort: "Une ligne `ip:port` par port ouvert, prête pour Nmap ou un pare-feu."
-            case .text: "Un tableau lisible pour un ticket ou un e-mail."
+            case .csv: L("Une ligne par appareil : IP, nom, MAC, fabricant, latence, ports, état.", "One line per device: IP, name, MAC, vendor, latency, ports, status.")
+            case .json: L("Les mêmes champs, structurés, pour les scripts.", "The same fields, structured for scripts.")
+            case .ipPort: L("Une ligne `ip:port` par port ouvert, prête pour Nmap ou un pare-feu.", "One `ip:port` line per open port, ready for Nmap or a firewall.")
+            case .text: L("Un tableau lisible pour un ticket ou un e-mail.", "A readable table for a ticket or an email.")
             }
         }
     }
@@ -49,10 +49,12 @@ final class AppModel {
     let scan: ScanController
     let mdns = MDNSDiscovery()
     let monitor = PingMonitor()
+    let updater: SimpleUpdater
 
     var showSidebar: Bool { didSet { defaults.set(showSidebar, forKey: "simplescanner.sidebar") } }
     var showInspector: Bool { didSet { defaults.set(showInspector, forKey: "simplescanner.inspector") } }
     var showAbout = false
+    var showUpdater = false
     var showHelp = false
     var showShortcuts = false
     var showExport = false
@@ -85,6 +87,9 @@ final class AppModel {
     var showDeadHosts: Bool {
         didSet { defaults.set(showDeadHosts, forKey: "simplescanner.showDead"); scan.showDeadHosts = showDeadHosts }
     }
+    var language: AppLanguage {
+        didSet { Localization.set(language, defaults: defaults, persist: true) }
+    }
 
     @ObservationIgnored private let defaults: UserDefaults
     @ObservationIgnored private var flashTask: Task<Void, Never>?
@@ -94,6 +99,8 @@ final class AppModel {
         let scan = scan ?? ScanController()
         self.scan = scan
         self.defaults = defaults
+        self.updater = SimpleUpdater(defaults: defaults)
+        language = Localization.current
         showSidebar = defaults.object(forKey: "simplescanner.sidebar") as? Bool ?? true
         showInspector = defaults.object(forKey: "simplescanner.inspector") as? Bool ?? true
         defaultProfile = ScanProfile(rawValue: defaults.string(forKey: "simplescanner.profile") ?? "") ?? .standard
@@ -106,6 +113,7 @@ final class AppModel {
             scan.detectDefaultSubnetIfNeeded()
             mdns.start()
             observeBonjour()
+            updater.checkOnLaunchIfNeeded()
             Task.detached(priority: .utility) { _ = OUILookup.shared.isAvailable } // warm the vendor index off the main thread
         }
     }
@@ -125,23 +133,24 @@ final class AppModel {
     var visibleHosts: [Host] { scan.filteredHosts }
 
     var statusMessage: String {
+        _ = language
         if let statusFlash { return statusFlash }
         if let error = scan.lastError { return error }
         switch scan.state {
         case .idle:
-            return scan.rangeInput.isEmpty ? "Choisissez un réseau à explorer" : "Prêt à scanner \(scan.rangeInput)"
+            return scan.rangeInput.isEmpty ? L("Choisir un réseau à explorer", "Choose a network to explore") : L("Prêt à scanner \(scan.rangeInput)", "Ready to scan \(scan.rangeInput)")
         case .scanning(let scanned, let total):
             if scan.portScanInProgress {
-                return "\(scan.phase.rawValue) · \(scan.portScanProgress.scanned)/\(scan.portScanProgress.total)"
+                return "\(scan.phase.label) · \(scan.portScanProgress.scanned)/\(scan.portScanProgress.total)"
             }
-            return scan.phase == .discovery ? "\(scan.phase.rawValue) · \(scanned)/\(total)" : scan.phase.rawValue
+            return scan.phase == .discovery ? "\(scan.phase.label) · \(scanned)/\(total)" : scan.phase.label
         case .done:
             let count = scan.aliveCount
-            let duration = scan.lastDuration.map { " en \(Format.elapsed($0))" } ?? ""
-            if scan.snapshotURL != nil { return "Scan ouvert : \(Format.count(count, "appareil"))" }
-            return count == 0 ? "Aucun appareil n'a répondu" : "\(Format.count(count, "appareil")) trouvé\(count > 1 ? "s" : "")\(duration)"
+            let duration = scan.lastDuration.map { L(" en \(Format.elapsed($0))", " in \(Format.elapsed($0))") } ?? ""
+            if scan.snapshotURL != nil { return L("Scan ouvert : \(Format.count(count, "appareil"))", "Opened scan: \(Format.count(count, "device"))") }
+            return count == 0 ? L("Aucun appareil n'a répondu", "No device responded") : L("\(Format.count(count, "appareil")) trouvé\(count > 1 ? "s" : "")\(duration)", "\(Format.count(count, "device")) found\(duration)")
         case .stopped:
-            return "Scan arrêté · \(Format.count(scan.aliveCount, "appareil"))"
+            return L("Scan arrêté · \(Format.count(scan.aliveCount, "appareil"))", "Scan stopped · \(Format.count(scan.aliveCount, "device"))")
         }
     }
 
@@ -229,19 +238,19 @@ final class AppModel {
         let ips = visibleHosts.filter { scan.selection.contains($0.id) }.map(\.ip)
         guard !ips.isEmpty else { return }
         HostActions.copy(ips.joined(separator: "\n"))
-        flash(ips.count == 1 ? "Adresse \(ips[0]) copiée" : "\(ips.count) adresses copiées")
+        flash(ips.count == 1 ? L("Adresse \(ips[0]) copiée", "Address \(ips[0]) copied") : L("\(ips.count) adresses copiées", "\(ips.count) addresses copied"))
     }
 
     func copy(_ text: String, what: String) {
         HostActions.copy(text)
-        flash("\(what) copié\(what.hasSuffix("e") ? "e" : "")")
+        flash(L("\(what) copié\(what.hasSuffix("e") ? "e" : "")", "\(what) copied"))
     }
 
     func deleteSelected() {
         let ids = scan.selection
         guard !ids.isEmpty else { return }
         scan.deleteHosts(ids)
-        flash(Format.count(ids.count, "appareil retiré", "appareils retirés") + " de la liste")
+        flash(L(Format.count(ids.count, "appareil retiré", "appareils retirés") + " de la liste", Format.count(ids.count, "device removed", "devices removed") + " from the list"))
     }
 
     func refreshSelected() {
@@ -298,7 +307,7 @@ final class AppModel {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = false
         panel.allowedContentTypes = [UTType(filenameExtension: ScanSnapshot.fileExtension) ?? .json, .json]
-        panel.message = "Ouvrir un scan enregistré (.simplescan ou .ipscan.json)"
+        panel.message = L("Ouvrir un scan enregistré (.simplescan ou .ipscan.json)", "Open a saved scan (.simplescan or .ipscan.json)")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         open(url)
     }
@@ -309,9 +318,9 @@ final class AppModel {
             let snapshot = try SnapshotIO.decode(data)
             scan.applySnapshot(snapshot, from: url)
             syncBonjour()
-            flash("Scan du \(Self.dateFormatter.string(from: snapshot.createdAt)) ouvert")
+            flash(L("Scan du \(Self.dateFormatter.string(from: snapshot.createdAt)) ouvert", "Scan from \(Self.dateFormatter.string(from: snapshot.createdAt)) opened"))
         } catch {
-            alert = Alert(title: "Ouverture impossible", message: error.localizedDescription)
+            alert = Alert(title: L("Ouverture impossible", "Could not open file"), message: error.localizedDescription)
         }
     }
 
@@ -320,13 +329,13 @@ final class AppModel {
         let panel = NSSavePanel()
         panel.allowedContentTypes = [UTType(filenameExtension: ScanSnapshot.fileExtension) ?? .json]
         panel.nameFieldStringValue = SnapshotIO.defaultFileName()
-        panel.message = "Enregistrer ce scan pour le rouvrir ou le comparer plus tard"
+        panel.message = L("Enregistrer ce scan pour le rouvrir ou le comparer plus tard", "Save this scan to reopen or compare later")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             try SnapshotIO.encode(scan.makeSnapshot()).write(to: url, options: .atomic)
-            flash("Scan enregistré : \(url.lastPathComponent)")
+            flash(L("Scan enregistré : \(url.lastPathComponent)", "Scan saved: \(url.lastPathComponent)"))
         } catch {
-            alert = Alert(title: "Enregistrement impossible", message: error.localizedDescription)
+            alert = Alert(title: L("Enregistrement impossible", "Could not save file"), message: error.localizedDescription)
         }
     }
 
@@ -334,14 +343,14 @@ final class AppModel {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = false
         panel.allowedContentTypes = [UTType(filenameExtension: ScanSnapshot.fileExtension) ?? .json, .json]
-        panel.message = "Choisir le scan de référence : les nouveautés, changements et disparitions seront marqués"
+        panel.message = L("Choisir le scan de référence : les nouveautés, changements et disparitions seront marqués", "Choose the baseline scan: new, modified, and missing devices will be highlighted")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             let snapshot = try SnapshotIO.decode(try Data(contentsOf: url))
             scan.loadComparisonBaseline(snapshot)
-            flash("Comparaison avec le scan du \(Self.dateFormatter.string(from: snapshot.createdAt))")
+            flash(L("Comparaison avec le scan du \(Self.dateFormatter.string(from: snapshot.createdAt))", "Comparing with scan from \(Self.dateFormatter.string(from: snapshot.createdAt))"))
         } catch {
-            alert = Alert(title: "Comparaison impossible", message: error.localizedDescription)
+            alert = Alert(title: L("Comparaison impossible", "Could not compare scan"), message: error.localizedDescription)
         }
     }
 
@@ -349,17 +358,23 @@ final class AppModel {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = false
         panel.allowedContentTypes = [.plainText, .commaSeparatedText, .text]
-        panel.message = "Un fichier .txt ou .csv : une adresse, un CIDR ou une plage par ligne (virgules acceptées)"
+        panel.message = L("Un fichier .txt ou .csv : une adresse, un CIDR ou une plage par ligne (virgules acceptées)", "A .txt or .csv file: one IP address, CIDR, or range per line (commas accepted)")
         guard panel.runModal() == .OK, let url = panel.url else { return }
         do {
             let summary = try scan.loadImportedFile(url: url)
             if summary.invalidLineCount > 0 {
-                alert = Alert(title: "Import partiel", message: "\(summary.targetCount) cibles lues. \(summary.invalidLineCount) ligne\(summary.invalidLineCount > 1 ? "s" : "") illisible\(summary.invalidLineCount > 1 ? "s" : "") ignorée\(summary.invalidLineCount > 1 ? "s" : "").")
+                alert = Alert(
+                    title: L("Import partiel", "Partial import"),
+                    message: L(
+                        "\(summary.targetCount) cibles lues. \(summary.invalidLineCount) ligne\(summary.invalidLineCount > 1 ? "s" : "") illisible\(summary.invalidLineCount > 1 ? "s" : "") ignorée\(summary.invalidLineCount > 1 ? "s" : "").",
+                        "\(summary.targetCount) targets read. \(summary.invalidLineCount) unreadable line\(summary.invalidLineCount > 1 ? "s" : "") skipped."
+                    )
+                )
             } else {
-                flash("\(Format.count(summary.targetCount, "cible")) importée\(summary.targetCount > 1 ? "s" : "")")
+                flash(L("\(Format.count(summary.targetCount, "cible")) importée\(summary.targetCount > 1 ? "s" : "")", "\(Format.count(summary.targetCount, "target")) imported"))
             }
         } catch {
-            alert = Alert(title: "Import impossible", message: error.localizedDescription)
+            alert = Alert(title: L("Import impossible", "Could not import file"), message: error.localizedDescription)
         }
     }
 
@@ -385,9 +400,9 @@ final class AppModel {
         do {
             HostActions.copy(try exportText(format: exportFormat, visibleOnly: exportVisibleOnly))
             showExport = false
-            flash("Export \(exportFormat.label) copié")
+            flash(L("Export \(exportFormat.label) copié", "\(exportFormat.label) export copied"))
         } catch {
-            alert = Alert(title: "Export impossible", message: error.localizedDescription)
+            alert = Alert(title: L("Export impossible", "Could not export"), message: error.localizedDescription)
         }
     }
 
@@ -398,19 +413,19 @@ final class AppModel {
         do {
             try exportText(format: exportFormat, visibleOnly: exportVisibleOnly).write(to: url, atomically: true, encoding: .utf8)
             showExport = false
-            flash("Export enregistré : \(url.lastPathComponent)")
+            flash(L("Export enregistré : \(url.lastPathComponent)", "Export saved: \(url.lastPathComponent)"))
         } catch {
-            alert = Alert(title: "Export impossible", message: error.localizedDescription)
+            alert = Alert(title: L("Export impossible", "Could not export"), message: error.localizedDescription)
         }
     }
 
-    static let dateFormatter: DateFormatter = {
+    static var dateFormatter: DateFormatter {
         let f = DateFormatter()
-        f.locale = Locale(identifier: "fr_FR")
+        f.locale = Localization.current.locale
         f.dateStyle = .medium
         f.timeStyle = .short
         return f
-    }()
+    }
 }
 
 extension Host {
