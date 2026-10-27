@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "SimpleScanner",
-    platforms: [.macOS(.v15)],
+    platforms: [.macOS(.v14)],
     products: [
         .library(name: "SimpleScannerCore", targets: ["SimpleScannerCore"]),
         .executable(name: "SimpleScanner", targets: ["SimpleScanner"]),
