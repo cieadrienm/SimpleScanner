@@ -5,6 +5,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
+export NOTARIZE="${NOTARIZE:-1}"
 ARCH=universal ./Scripts/bundle.sh release
 
 APP="build/SimpleScanner.app"

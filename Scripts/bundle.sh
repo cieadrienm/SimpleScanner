@@ -93,9 +93,19 @@ sed -i '' -e "s/@VERSION@/$VERSION/" -e "s/@BUILD@/$BUILD/" "$APP/Contents/Info.
 
 if [ -z "${SIGN_IDENTITY:-}" ]; then
     IDENTITIES="$(security find-identity -v -p codesigning 2>/dev/null || true)"
-    SIGN_IDENTITY="$(echo "$IDENTITIES" | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p' | head -1)"
-    [ -n "$SIGN_IDENTITY" ] || SIGN_IDENTITY="$(echo "$IDENTITIES" | sed -n 's/.*"\(Apple Development: [^"]*\)".*/\1/p' | head -1)"
-    [ -n "$SIGN_IDENTITY" ] || SIGN_IDENTITY="-"
+    DEV_ID_LINE="$(echo "$IDENTITIES" | grep '"Developer ID Application: ' | tail -1 || true)"
+    if [ -n "$DEV_ID_LINE" ]; then
+        SIGN_HASH="$(echo "$DEV_ID_LINE" | awk '{print $2}')"
+        SIGN_IDENTITY="$(echo "$DEV_ID_LINE" | sed -n 's/.*"\(Developer ID Application: [^"]*\)".*/\1/p')"
+    else
+        APP_DEV_LINE="$(echo "$IDENTITIES" | grep '"Apple Development: ' | tail -1 || true)"
+        SIGN_HASH="$(echo "$APP_DEV_LINE" | awk '{print $2}')"
+        SIGN_IDENTITY="$(echo "$APP_DEV_LINE" | sed -n 's/.*"\(Apple Development: [^"]*\)".*/\1/p')"
+    fi
+    [ -n "${SIGN_IDENTITY:-}" ] || SIGN_IDENTITY="-"
+    [ -n "${SIGN_HASH:-}" ] || SIGN_HASH="$SIGN_IDENTITY"
+else
+    SIGN_HASH="$SIGN_IDENTITY"
 fi
 # Developer ID: hardened runtime and a secure timestamp, as notarization requires
 case "$SIGN_IDENTITY" in
@@ -103,24 +113,30 @@ case "$SIGN_IDENTITY" in
     *) SIGN_FLAGS="--timestamp=none" ;;
 esac
 # A stable signature keeps the Local Network permission macOS grants the app from one build to the next.
-if ! codesign --force $SIGN_FLAGS --sign "$SIGN_IDENTITY" "$APP" 2>/tmp/simplescanner-codesign.log; then
-    echo "warning: signing with '$SIGN_IDENTITY' failed; falling back to ad hoc" >&2
+if ! codesign --force $SIGN_FLAGS --sign "$SIGN_HASH" "$APP" 2>/tmp/simplescanner-codesign.log; then
+    echo "warning: signing with '$SIGN_IDENTITY' ($SIGN_HASH) failed; falling back to ad hoc" >&2
     SIGN_IDENTITY="-"
     codesign --force --sign - "$APP"
 fi
-echo "signed: $SIGN_IDENTITY" >&2
+echo "signed: $SIGN_IDENTITY ($SIGN_HASH)" >&2
 
-# NOTARIZE=1: Apple checks the app and the ticket is stapled to it, so Gatekeeper opens it without a warning
-if [ "${NOTARIZE:-0}" = "1" ]; then
+# NOTARIZE defaults to 1 on release builds signed with Developer ID Application (pass NOTARIZE=0 to skip)
+if [ "${NOTARIZE:-$([ "$CONFIG" = release ] && echo 1 || echo 0)}" = "1" ]; then
     case "$SIGN_IDENTITY" in
-        "Developer ID Application:"*) ;;
-        *) echo "error: NOTARIZE=1 needs a Developer ID Application certificate" >&2; exit 1 ;;
+        "Developer ID Application:"*)
+            ditto -c -k --keepParent "$APP" "$APP.notarize.zip"
+            xcrun notarytool submit "$APP.notarize.zip" --keychain-profile "${NOTARY_PROFILE:-notary}" --wait
+            rm -f "$APP.notarize.zip"
+            xcrun stapler staple "$APP"
+            echo "notarized and stapled" >&2
+            ;;
+        *)
+            if [ "${NOTARIZE:-}" = "1" ]; then
+                echo "error: NOTARIZE=1 needs a Developer ID Application certificate" >&2
+                exit 1
+            fi
+            ;;
     esac
-    ditto -c -k --keepParent "$APP" "$APP.notarize.zip"
-    xcrun notarytool submit "$APP.notarize.zip" --keychain-profile "${NOTARY_PROFILE:-notary}" --wait
-    rm -f "$APP.notarize.zip"
-    xcrun stapler staple "$APP"
-    echo "notarized and stapled" >&2
 fi
 
 INSTALL_DIR="${INSTALL_DIR:-/Applications}"
